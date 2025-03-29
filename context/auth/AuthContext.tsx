@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthState(prev => ({ ...prev, needsMobileVerification: value }));
     // Store this state for app refreshes
     // AsyncStorage.setItem('needsMobileVerification', value ? 'true' : 'false');
-    SecureStore.setItem('needsMobileVerification', value ? 'true' : 'false')
+    SecureStore.setItemAsync('needsMobileVerification', value ? 'true' : 'false')
   };
 
   // Refresh the session data
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSessionChange = async (session: Session | null) => {
     if (session) {
       // Check if mobile verification is needed from storage
-      const needsVerification = await AsyncStorage.getItem('needsMobileVerification');
+      const needsVerification = await SecureStore.getItemAsync('needsMobileVerification');
       
       setAuthState({
         user: session.user,
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sign out
   const signOut = async () => {
     await supabase.auth.signOut();
-    await AsyncStorage.removeItem('needsMobileVerification');
+    await SecureStore.deleteItemAsync('needsMobileVerification');
     setAuthState({
       user: null,
       session: null,

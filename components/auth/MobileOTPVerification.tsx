@@ -29,13 +29,16 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
     try {
       setLoading(true);
       setError(null);
+
+      // trim whitespaces from phone number input
+      const sanitizedPhone = phoneNumber.trim()
       
       // Validate phone number format
-      if (!isPossiblePhoneNumber(phoneNumber)) {
+      if (!isPossiblePhoneNumber(sanitizedPhone)) {
         throw new Error('Please enter a valid phone number');
       }
 
-      const response = await signInWithOtp(phoneNumber);
+      const response = await signInWithOtp(sanitizedPhone);
       
       if (response && 'message' in response) {
         throw new Error(response.message);

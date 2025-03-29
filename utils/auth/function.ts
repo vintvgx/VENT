@@ -47,6 +47,10 @@ export const verifyOtp = async (
       console.error('Verification Error:', error);
       return { success: false, error };
     }
+
+    if(data.session === undefined) {
+      return { success: false, data };
+    }
     
     return { success: true, data };
   } catch (error) {

@@ -1,10 +1,18 @@
-import React from 'react';
-import { StyleSheet, Text, View, Platform, Image, SafeAreaView, ScrollView } from 'react-native';
-import { Stack } from 'expo-router';
-import AppleAuth from '@/components/auth/AppleAuth';
-import GoogleAuth from '@/components/auth/GoogleAuth';
-import { useAuthGuard } from '@/hooks/useAuthHook';
-import MobileVerification from '@/components/auth/MobileOTPVerification';
+import React from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  Image,
+  SafeAreaView,
+  ScrollView,
+} from "react-native";
+import { router, Stack } from "expo-router";
+import AppleAuth from "@/components/auth/AppleAuth";
+import GoogleAuth from "@/components/auth/GoogleAuth";
+import { useAuthGuard } from "@/hooks/useAuthHook";
+import MobileVerification from "@/components/auth/MobileOTPVerification";
 
 const AuthScreen = () => {
   // This will redirect away if user is already authenticated
@@ -12,51 +20,66 @@ const AuthScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ 
-        title: "", 
-        headerShown: false 
-      }} />
-      
+      <Stack.Screen
+        options={{
+          title: "",
+          headerShown: false,
+        }}
+      />
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('@/assets/images/icon.png')} 
+          <Image
+            source={require("@/assets/images/icon.png")}
             style={styles.logo}
             resizeMode="contain"
           />
           <Text style={styles.appName}>VENT</Text>
-          <Text style={styles.tagline}>
-            Connect through shared experiences
-          </Text>
+          <Text style={styles.tagline}>Connect through shared experiences</Text>
         </View>
-        
+
         <View style={styles.authContainer}>
           <Text style={styles.sectionTitle}>Sign In / Sign Up</Text>
-          
+
           <View style={styles.socialContainer}>
             <GoogleAuth />
-            
-            {Platform.OS === 'ios' && (
+
+            {Platform.OS === "ios" && (
               <View style={styles.socialButton}>
                 <AppleAuth />
               </View>
             )}
           </View>
-          
+
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.divider} />
           </View>
-          
+
           <View style={styles.phoneContainer}>
             <MobileVerification />
           </View>
         </View>
-        
+
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>
-            By signing in, you agree to our Terms of Service and Privacy Policy
+            By signing in, you agree to our{" "}
+            <Text
+              style={styles.linkText}
+              //TODO  create terms dialog component or screen
+              // onPress={() => router.push("/(public)/terms")}
+              >
+              Terms of Service
+            </Text>{" "}
+            and{" "}
+            <Text
+              style={styles.linkText}
+              //TODO create privacy dialog component or screen
+              // onPress={() => router.push("/(public)/privacy")}
+              >
+              Privacy Policy
+            </Text>
           </Text>
         </View>
       </ScrollView>
@@ -69,14 +92,14 @@ export default AuthScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   scrollContainer: {
     flexGrow: 1,
     paddingBottom: 40,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 60,
     paddingBottom: 40,
   },
@@ -87,13 +110,13 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   tagline: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     paddingHorizontal: 40,
   },
   authContainer: {
@@ -101,12 +124,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
   socialContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 16,
     marginBottom: 24,
   },
@@ -114,30 +137,34 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
   },
   dividerText: {
     paddingHorizontal: 16,
-    color: '#666',
+    color: "#666",
   },
   phoneContainer: {
     marginBottom: 24,
   },
   footerContainer: {
-    marginTop: 'auto',
-    alignItems: 'center',
+    marginTop: "auto",
+    alignItems: "center",
     paddingHorizontal: 40,
   },
+  linkText: {
+    color: '#007AFF',
+    textDecorationLine: 'underline',
+  },
   footerText: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: "#666",
     fontSize: 12,
   },
 });
