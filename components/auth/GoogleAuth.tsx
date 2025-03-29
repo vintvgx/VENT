@@ -1,6 +1,8 @@
 import {
     GoogleSignin,
     GoogleSigninButton,
+    isSuccessResponse,
+    isErrorWithCode,
     statusCodes,
   } from '@react-native-google-signin/google-signin'
   import { supabase } from '@/lib/supabase/supabase'
@@ -8,7 +10,9 @@ import {
   export default function () {
     GoogleSignin.configure({
       scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-      webClientId: 'YOUR CLIENT ID FROM GOOGLE CONSOLE',
+      iosClientId: "49402666160-hrdp0lalkae29cjs5biltjbv9cbc2tsb.apps.googleusercontent.com",
+      webClientId: '49402666160-vs5sjj0q2td8k3320j0or0v0fag0k7lr.apps.googleusercontent.com',
+      profileImageSize: 150
     })
   
     return (
@@ -18,16 +22,25 @@ import {
         onPress={async () => {
           try {
             await GoogleSignin.hasPlayServices()
-            const userInfo = await GoogleSignin.signIn()
-            if (userInfo.data && userInfo.data.idToken) {
-              const { data, error } = await supabase.auth.signInWithIdToken({
+            const response = await GoogleSignin.signIn()
+            if(isSuccessResponse(response)) {
+               const {idToken, user} = response.data
+
+               const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',
-                token: userInfo.data.idToken,
+                token: idToken!!
               })
-              console.log(error, data)
-            } else {
-              throw new Error('no ID token present!')
             }
+
+            // if (userInfo.data && userInfo.data.idToken) {
+            //   const { data, error } = await supabase.auth.signI nWithIdToken({
+            //     provider: 'google',
+            //     token: userInfo.data.idToken,
+            //   })
+            //   console.log(error, data)
+            // } else {
+            //   throw new Error('no ID token present!')
+            // }
           } catch (error: any) {
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
               // user cancelled the login flow
