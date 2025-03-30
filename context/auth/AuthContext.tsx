@@ -1,5 +1,7 @@
+// In AuthContext.tsx
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState } from "@/types/auth";
+import { prettyJSON } from "@/utils/strings/function";
 import { Session } from "@supabase/supabase-js";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -17,21 +19,17 @@ const AuthContext = createContext<AuthContextType>({
   refreshSession: async () => {},
 });
 
-/**
- * AuthProvider is a React context provider component that manages authentication state
- * It initializes and maintains the authentication state for the entire application,
- * including user session and loading status.
- */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Initialize authentication state with default state
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     session: null,
     loading: true,
     isAuthenticated: false,
   });
+  
+  // Add a state to track initial navigation
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Refresh the session data
   const refreshSession = async () => {
     const { data, error } = await supabase.auth.getSession();
 
@@ -53,9 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Handle session changes
   const handleSessionChange = async (session: Session | null) => {
-    // Sets user if session is active
     if (session) {
       setAuthState({
         user: session.user,
@@ -73,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     await supabase.auth.signOut();
     await SecureStore.deleteItemAsync("needsMobileVerification");
@@ -81,11 +76,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: null,
       session: null,
       loading: false,
-      //   needsMobileVerification: false,
       isAuthenticated: false,
     });
-    router.replace("/(public)/auth");
+    
+    // Only navigate after signing out if initialization is complete
+    if (isInitialized) {
+      router.replace("/(public)/auth");
+    }
   };
+
+  // Handle navigation effects separately from auth state
+  useEffect(() => {
+    // Only navigate once auth state is determined AND component is mounted
+    if (!authState.loading && isInitialized) {
+      if (authState.isAuthenticated) {
+        router.replace("/(app)/home");
+      } else {
+        router.replace("/(public)/auth");
+      }
+    }
+  }, [authState.isAuthenticated, authState.loading, isInitialized]);
 
   // Subscribe to auth changes on mount
   useEffect(() => {
@@ -110,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession) {
           // Set initial auth state with current session
           await handleSessionChange(currentSession);
-          router.replace("/(app)/home");
+          // DON'T navigate here
         } else {
           // No active session
           setAuthState((prev) => ({
@@ -118,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             loading: false,
             isAuthenticated: false,
           }));
-          router.replace("/(public)/auth");
+          // DON'T navigate here
         }
 
         // Set up auth state change listener
@@ -127,14 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log(`Supabase auth event: ${event}`);
             await handleSessionChange(session);
 
-            // Handle navigation based on auth state
-            if (event === "SIGNED_IN") {
-              router.replace("/(app)/home");
-            } else if (event === "SIGNED_OUT") {
-              router.replace("/(public)/auth");
-            }
+            // Navigation will happen in the useEffect above
           }
         );
+        
+        // Mark initialization as complete, which will trigger navigation
+        setIsInitialized(true);
 
         // Cleanup subscription on unmount
         return () => {
@@ -147,15 +155,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           loading: false,
           isAuthenticated: false,
         }));
-        router.replace("/(public)/auth");
+        setIsInitialized(true); // Still mark as initialized so navigation can happen
       }
     };
 
-    // Call to initialize auth
-    // 1. checks current session to set auth state/user
-    // 2. sets up auth state listener to handle auth state changes
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    console.log("Auth State Change:", prettyJSON(authState.loading))
+  }, [authState])
 
   return (
     <AuthContext.Provider
@@ -169,7 +178,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   return useContext(AuthContext);
 }
