@@ -10,7 +10,6 @@ export type AuthState = {
     user: User | null;
     session: Session | null;
     loading: boolean;
-    needsMobileVerification: boolean;
     isAuthenticated: boolean;
   };
   
@@ -19,5 +18,4 @@ export type AuthContextType = {
     authState: AuthState;
     signOut: () => Promise<void>;
     refreshSession: () => Promise<void>;
-    setNeedsMobileVerification: (value: boolean) => void;
   };

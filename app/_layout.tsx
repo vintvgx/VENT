@@ -1,22 +1,21 @@
 /**
  * The MainLayout for the app
  */
+import { AuthProvider } from "@/context/auth/AuthContext";
+import "@/global.css";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import "@/global.css";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import "react-native-reanimated";
 import { useColorScheme } from "react-native";
+import "react-native-reanimated";
 import { GluestackUIProvider } from "../components/ui/gluestack-ui-provider";
-import { AuthProvider } from "@/context/auth/AuthContext";
-import { AuthenticationGuard } from "@/components/auth/AuthenticationGuard";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,7 +41,6 @@ export default function RootLayout() {
       <GluestackUIProvider mode="light">
         <ThemeProvider
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <AuthenticationGuard>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -52,7 +50,6 @@ export default function RootLayout() {
             {/* <Stack />
           <Stack.Screen name="+not-found" /> */}
             <StatusBar style="auto" />
-          </AuthenticationGuard>
         </ThemeProvider>
       </GluestackUIProvider>
     </AuthProvider>
