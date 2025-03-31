@@ -27,9 +27,9 @@ const AppleAuth = () => {
                 provider: 'apple',
                 token: credential.identityToken,
               })
-              console.log(JSON.stringify({ error, user }, null, 2))
               if (!error) {
                 // User is signed in.
+                console.log(`${user?.email} signed in`)
               }
             } else {
               throw new Error('No identityToken.')

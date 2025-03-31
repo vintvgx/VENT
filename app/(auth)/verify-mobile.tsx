@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
 import { Stack } from 'expo-router';
-import { useAuthGuard } from '@/hooks/useAuthHook';
+// import { useAuthGuard } from '@/hooks/useAuthHook';
 import { useAuth } from '@/context/auth/AuthContext';
 import MobileVerification from '@/components/auth/MobileOTPVerification';
 
@@ -10,7 +10,7 @@ const VerifyMobileScreen = () => {
   const { authState } = useAuth();
   
   // This will redirect if user is not authenticated or doesn't need verification
-  useAuthGuard(true, true);
+  // useAuthGuard(true, true);
 
   if (authState.loading) {
     return (

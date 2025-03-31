@@ -14,7 +14,7 @@ export const signInWithOtp = async (mobile: string) => {
 
     if(error) {
       console.error('OTP Error:', error);
-      return error;
+      return { success: false, error };
     }
     
     return { success: true };

@@ -54,3 +54,13 @@ Join our community of developers creating universal apps.
 ## Development Notes
 
 npx gluestack-ui add (component) //add gluestack-ui components comammnd:
+
+eas build --platform ios --profile simulator // build ios app (specify what profile to use which is defined in eas.json)
+
+
+// build development builds for ios and android
+// ensure to scan qr code to generate profile for device(s)
+eas build --profile development --platform all 
+
+//command to run development build in development
+expo start --dev-client
