@@ -12,7 +12,8 @@ import { useAuth } from "@/context/auth/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthHook";
 
 const HomeScreen = () => {
-  useAuthGuard(true, false); // requires auth , does not require mobile auth
+  //TODO implement useAuthGuard when implementing 2FA
+  // useAuthGuard(true, false); 
   const { authState, signOut } = useAuth();
 
   const handleSignOut = async () => {

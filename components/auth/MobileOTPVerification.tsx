@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { isPossiblePhoneNumber } from 'libphonenumber-js';
 import { supabase } from '@/lib/supabase/supabase';
 import { signInWithOtp } from '@/utils/auth/function';
 import { router } from 'expo-router';
-import { useAuth } from '@/context/auth/AuthContext';
+import { isPossiblePhoneNumber } from 'libphonenumber-js';
+import React, { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface MobileVerificationProps {
   isSecondFactor?: boolean;
@@ -23,8 +22,6 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
   const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { setNeedsMobileVerification } = useAuth();
-
   const handleSendOTP = async () => {
     try {
       setLoading(true);
@@ -75,9 +72,9 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
       }
 
       // If this was used as a second factor, mark mobile verification as complete
-      if (isSecondFactor) {
-        setNeedsMobileVerification(false);
-      }
+      // if (isSecondFactor) {
+      //   setNeedsMobileVerification(false);
+      // }
       
       // Navigate to home after successful verification
       router.replace('/(app)/home');

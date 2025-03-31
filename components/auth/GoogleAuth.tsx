@@ -30,17 +30,13 @@ import {
                 provider: 'google',
                 token: idToken!!
               })
-            }
 
-            // if (userInfo.data && userInfo.data.idToken) {
-            //   const { data, error } = await supabase.auth.signI nWithIdToken({
-            //     provider: 'google',
-            //     token: userInfo.data.idToken,
-            //   })
-            //   console.log(error, data)
-            // } else {
-            //   throw new Error('no ID token present!')
-            // }
+              if (data.session) {
+                console.log(`Google user signed in: ${data.user.email}`)
+              } else {
+                console.error("Google sign-in failed with non-success response")
+              }
+            }
           } catch (error: any) {
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
               // user cancelled the login flow

@@ -70,8 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    await SecureStore.deleteItemAsync("needsMobileVerification");
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign Out Error:', error);
+    }
+
     setAuthState({
       user: null,
       session: null,
@@ -161,10 +164,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
   }, []);
-
-  useEffect(() => {
-    console.log("Auth State Change:", prettyJSON(authState.loading))
-  }, [authState])
 
   return (
     <AuthContext.Provider
