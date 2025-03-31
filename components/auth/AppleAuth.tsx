@@ -20,6 +20,10 @@ const AppleAuth = () => {
             })
             // Sign in via Supabase Auth.
             if (credential.identityToken) {
+
+              console.log("🚀 ~ onPress={ ~ credential:", credential.fullName)
+              console.log("🚀 ~ onPress={ ~ identityToken:", credential.identityToken)
+
               const {
                 error,
                 data: { user },
@@ -27,7 +31,15 @@ const AppleAuth = () => {
                 provider: 'apple',
                 token: credential.identityToken,
               })
-              console.log(JSON.stringify({ error, user }, null, 2))
+              // console.log(JSON.stringify({ error, user }, null, 2))
+              console.error('Supabase Auth Error:', JSON.stringify({
+                status: error.status,
+                name: error.name,
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                stack: error.stack
+              }, null, 2))
               if (!error) {
                 // User is signed in.
               }
