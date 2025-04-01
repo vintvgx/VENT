@@ -8,14 +8,19 @@ import { AuthError } from "@supabase/supabase-js";
  */
 export const signInWithOtp = async (mobile: string) => { 
   try {
-    const { error } = await supabase.auth.signInWithOtp({
+    console.log("Signing in with mobile: ", mobile)
+    const { data, error } = await supabase.auth.signInWithOtp({
       phone: mobile,
     });
-
+    
     if(error) {
       console.error('OTP Error:', error);
       return { success: false, error };
     }
+    
+    // Log success with response data
+    console.log('OTP request successful. Response:', data);
+    return { success: true, data };
     
     return { success: true };
   } catch (error) {
