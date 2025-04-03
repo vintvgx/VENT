@@ -1,12 +1,15 @@
 import { User } from "@supabase/supabase-js";
 
-// Consider adding these fields to UserModel
+/**
+ * Represents a user in the system, including their basic information,
+ * profile data, and onboarding selections.
+*/
 export interface UserModel {
     user: User;
     firstName: string;
     lastName: string;
     username: string;
-    DOB: Date;
+    dob: Date | string; 
     isAnonymous: boolean; // Flag for anonymous users
     profileCompletionPercentage: number; // Track completion
     profile: ProfileModel;
@@ -15,8 +18,10 @@ export interface UserModel {
     lastActiveAt: Date;
   }
   
-  // Add relevance scoring to interests/experiences
-  export interface ProfileModel {
+  /**
+   * Represents a user's profile preferences, interests, and experiences.
+   */
+export interface ProfileModel {
     // Existing fields
     topicsOfInterest: Array<{topic: string, relevanceScore: number}>;
     experience: Array<{area: string, relevanceScore: number}>;
@@ -26,8 +31,10 @@ export interface UserModel {
     availabilityPreferences?: string; // When they prefer to engage
   }
   
-  // Rename for consistency and expand
-  export interface OnboardSelection {
+/**
+ * Represents the selections made during user onboarding.
+ **/
+export interface OnboardSelection {
     // Existing fields with relevance scoring
     areasOfSupport: Array<{area: string, urgency: number}>;
     shortTermGoals: Array<{goal: string, priority: number}>;
