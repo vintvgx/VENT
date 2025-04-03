@@ -50,3 +50,12 @@ export interface OnboardSelection {
 
 
   //Social/Email Auth → Essential Profile (username, age) → Quick Needs Assessment (urgent support areas) → Welcome to Home → Progressive profile completion (prompted over time)
+
+  /**
+ * User Journey Flow:
+ * 1. Social/Email Auth
+ * 2. Essential Profile (username, age)
+ * 3. Quick Needs Assessment (urgent support areas)
+ * 4. Welcome to Home
+ * 5. Progressive profile completion (prompted over time)
+ */
