@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import React from 'react'
 import { supabase } from '@/lib/supabase/supabase'
+import { updateUserMetadata } from '@/utils/auth/function'
 
 const AppleAuth = () => {
   return (
@@ -22,15 +23,35 @@ const AppleAuth = () => {
             if (credential.identityToken) {
               const {
                 error,
-                data: { user },
+                data,
               } = await supabase.auth.signInWithIdToken({
                 provider: 'apple',
                 token: credential.identityToken,
               })
-              if (!error) {
-                // User is signed in.
-                console.log(`${user?.email} signed in`)
+              
+              if (error) {
+                throw error;
               }
+          
+              // Update user metadata if sign-in was successful
+              if (data.user) {
+                const metadataResult = await updateUserMetadata(
+                  {
+                    firstName: credential.fullName?.givenName,
+                    lastName: credential.fullName?.familyName,
+                    email: credential.email,
+                  }
+                );
+                
+                if (!metadataResult.success) {
+                  console.warn('User created but metadata update failed:', metadataResult.error);
+                  return
+                }
+                console.log("User metadata saved successfully")
+              }
+              
+              // User is signed in
+              console.log('Apple authentication successful:', data.user);
             } else {
               throw new Error('No identityToken.')
             }

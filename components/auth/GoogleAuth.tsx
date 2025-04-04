@@ -6,6 +6,7 @@ import {
     statusCodes,
   } from '@react-native-google-signin/google-signin'
   import { supabase } from '@/lib/supabase/supabase'
+import { updateUserMetadata } from '@/utils/auth/function'
   
   export default function () {
     GoogleSignin.configure({
@@ -35,6 +36,23 @@ import {
                 console.log(`Google user signed in: ${data.user.email}`)
               } else {
                 console.error("Google sign-in failed with non-success response")
+              }
+
+              // Update user metadata if sign-in was successful
+              if (data.user) {
+                const metadataResult = await updateUserMetadata(
+                  {
+                    firstName: user?.givenName,
+                    lastName: user?.familyName,
+                    email: user.email,
+                  }
+                );
+                
+                if (!metadataResult.success) {
+                  console.warn('User created but metadata update failed:', metadataResult.error);
+                  return
+                }
+                console.log("User metadata saved successfully")
               }
             }
           } catch (error: any) {
