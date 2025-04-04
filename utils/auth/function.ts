@@ -1,5 +1,58 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthError } from "@supabase/supabase-js";
+import { nanoid } from 'nanoid';
+
+/**
+ * Generate a unique username
+ * TODO Delete / user name is updated within user name 
+ */
+const generateUsername = () => {
+  return `user_${nanoid(8)}`;
+};
+
+/**
+ * Updates user metadata after successful authentication
+ * @param userData Optional user data from authentication provider
+ * @param phoneNumber Optional phone number (primarily for mobile auth)
+ * @returns Object containing success status and any error
+ */
+export const updateUserMetadata = async (
+  userData?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    picture?: string | null;
+  },
+  phoneNumber?: string | null
+) => {
+  try {
+    // Common metadata to update for the user
+    const metadataToUpdate = {
+      first_name: userData?.firstName || '',
+      last_name: userData?.lastName || '',
+      username: generateUsername(),
+      avatar_url: userData?.picture || '',
+      mobile: phoneNumber || '',
+      email: userData?.email || '',
+    };
+    
+    // Update user metadata
+    const { data, error } = await supabase.auth.updateUser({
+      data: metadataToUpdate
+    });
+    
+    if (error) {
+      console.warn('Failed to update user metadata:', error);
+      return { success: false, error };
+    }
+    
+    return { success: true, error: null, user: data.user };
+    
+  } catch (error) {
+    console.error('Error updating user metadata:', error);
+    return { success: false, error };
+  }
+};
 
 /**
  * Sends an OTP to the provided mobile number
