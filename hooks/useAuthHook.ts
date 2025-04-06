@@ -12,7 +12,7 @@ export function useAuthGuard(
   requireMobileVerification: boolean = false
 ) {
   const { authState } = useAuth();
-  const { isAuthenticated, needsMobileVerification, loading } = authState;
+  const { isAuthenticated, needsMobileVerification, isLoading: loading } = authState;
 
   useEffect(() => {
     // Don't redirect while auth state is still loading

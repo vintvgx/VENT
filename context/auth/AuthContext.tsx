@@ -15,19 +15,20 @@ const AuthContext = createContext<AuthContextType>({
   authState: {
     user: null,
     session: null,
-    loading: true,
+    isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
   },
   signOut: async () => {},
   refreshSession: async () => {},
+  setOnboardingStep: async (state: OnboardingStep) => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     session: null,
-    loading: true,
+    isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
   });
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         user: null,
         session: null,
-        loading: false,
+        isLoading: false,
         isAuthenticated: false,
       }));
     }
@@ -109,14 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         user: session.user,
         session,
-        loading: false,
+        isLoading: false,
         isAuthenticated: true,
       });
     } else {
       setAuthState({
         user: null,
         session: null,
-        loading: false,
+        isLoading: false,
         isAuthenticated: false,
       });
     }
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthState({
       user: null,
       session: null,
-      loading: false,
+      isLoading: false,
       isAuthenticated: false,
     });
 
@@ -141,9 +142,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Updates the onboarding step in both state and persistent storage.
+   * This function validates the provided step against valid OnboardingStep enum values
+   * before updating the application state and AsyncStorage.
+   *
+   * @param state - The new OnboardingStep value to set
+   * @returns Promise<void>
+   */
+  const setOnboardingStep = async (state: OnboardingStep) => {
+    if (Object.values(OnboardingStep).includes(state)) {
+      setAuthState((prev) => ({
+        ...prev,
+        onboardingStep: state,
+      }));
+      await AsyncStorage.setItem("onboardingStep", state);
+    }
+  };
+
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
-    if (authState.loading) return;
+    if (authState.isLoading) return;
 
     if (isInitialized) {
       // Not authenticated
@@ -172,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace("/(app)/home");
       }
     }
-  }, [authState.isAuthenticated, authState.loading, isInitialized]);
+  }, [authState.isAuthenticated, authState.isLoading, isInitialized]);
 
   // Subscribe to auth changes on mount
   useEffect(() => {
@@ -188,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Error getting initial session:", error);
           setAuthState((prev) => ({
             ...prev,
-            loading: false,
+            isLoading: false,
             isAuthenticated: false,
           }));
           return;
@@ -196,14 +215,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (currentSession) {
           // Detemine if onboarding process is complete
-          await determineOnboardingStep(currentSession.user.id)
+          await determineOnboardingStep(currentSession.user.id);
           // Set initial auth state with current session
           await handleSessionChange(currentSession);
         } else {
           // No active session
           setAuthState((prev) => ({
             ...prev,
-            loading: false,
+            isLoading: false,
             isAuthenticated: false,
           }));
         }
@@ -229,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Fatal error during auth initialization:", error);
         setAuthState((prev) => ({
           ...prev,
-          loading: false,
+          isLoading: false,
           isAuthenticated: false,
         }));
         setIsInitialized(true); // Still mark as initialized so navigation can happen
@@ -245,6 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authState,
         signOut,
         refreshSession,
+        setOnboardingStep,
       }}>
       {children}
     </AuthContext.Provider>

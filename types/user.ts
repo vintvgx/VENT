@@ -17,6 +17,21 @@ export interface UserModel {
     createdAt: Date;
     lastActiveAt: Date;
   }
+/**
+ * Represents the values stored within the user metadata 
+ * (supabase.auth.data)
+ */
+  export interface UserMetaData {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    createdAt: Date;
+    isAnonymous?: boolean; 
+    lastActiveAt?: Date;
+    phoneNumber?: string;
+    avatar?: string;
+    email?: string;
+  }
   
   /**
    * Represents a user's profile preferences, interests, and experiences.

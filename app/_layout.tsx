@@ -45,7 +45,7 @@ function AppContent() {
   const { authState } = useAuth();
   const colorScheme = useColorScheme();
     
-  if (authState.loading) {
+  if (authState.isLoading) {
     return <LoadingScreen />;
   }
 
