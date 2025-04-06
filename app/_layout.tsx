@@ -1,6 +1,10 @@
 import { AuthProvider, useAuth } from "@/context/auth/AuthContext";
 import "@/global.css";
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,6 +14,7 @@ import { useColorScheme } from "react-native";
 import "react-native-reanimated";
 import { GluestackUIProvider } from "../components/ui/gluestack-ui-provider";
 import LoadingScreen from "./components/LoadingScreen";
+import { ToastProvider } from "@gluestack-ui/toast";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -44,18 +49,21 @@ export default function RootLayout() {
 function AppContent() {
   const { authState } = useAuth();
   const colorScheme = useColorScheme();
-    
-  if (authState.loading) {
+
+  if (authState.isLoading) {
     return <LoadingScreen />;
   }
 
   return (
     <GluestackUIProvider mode="light">
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        {/* Don't wrap Slot in Stack here */}
-        <Slot />
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <ToastProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          {/* Don't wrap Slot in Stack here */}
+          <Slot />
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </ToastProvider>
     </GluestackUIProvider>
   );
 }

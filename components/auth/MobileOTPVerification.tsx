@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { isPossiblePhoneNumber } from 'libphonenumber-js';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { TOAST, useShowToast } from '../ui/toast/useToast';
+import { useAuth } from '@/context/auth/AuthContext';
 
 interface MobileVerificationProps {
   isSecondFactor?: boolean;
@@ -16,6 +18,13 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
   onSuccess,
   onError
 }) => {
+  const showToast = useShowToast();
+
+  const {
+    authState: { user },
+    setOnboardingStep,
+  } = useAuth();
+
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,10 +47,12 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
       const response = await signInWithOtp(sanitizedPhone);
       
       if (response && 'message' in response) {
+        showToast(TOAST.ERROR, response.message as string)
         throw new Error(response.message);
       }
       
       setCodeSent(true);
+      showToast(TOAST.INFO, "Code sent")
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
@@ -68,23 +79,16 @@ const MobileVerification: React.FC<MobileVerificationProps> = ({
       });
 
       if (error) {
+        showToast(TOAST.ERROR, error.message)
         throw new Error(error.message);
       }
 
-      // If this was used as a second factor, mark mobile verification as complete
-      // if (isSecondFactor) {
-      //   setNeedsMobileVerification(false);
-      // }
-      
-      // Navigate to home after successful verification
-      router.replace('/(app)/home');
-      
-      onSuccess?.();
-      
+      // AuthContext will handle the navigation to onboard or home once OTP is verified
+      showToast(TOAST.SUCCESS, `Mobile user authenticated successfully`)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to verify code';
+      showToast(TOAST.ERROR, errorMessage)
       setError(errorMessage);
-      onError?.(err as Error);
     } finally {
       setLoading(false);
     }

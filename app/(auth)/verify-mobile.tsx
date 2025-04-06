@@ -12,7 +12,7 @@ const VerifyMobileScreen = () => {
   // This will redirect if user is not authenticated or doesn't need verification
   // useAuthGuard(true, true);
 
-  if (authState.loading) {
+  if (authState.isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>

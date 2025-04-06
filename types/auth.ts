@@ -5,16 +5,25 @@ import { Session, User } from '@supabase/supabase-js';
 // - session: The active auth session (null if not authenticated) 
 // - loading: Whether auth state is being initialized/updated
 // - isAuthenticated: Whether there is an active authenticated session
-export type AuthState = {
-    user: User | null;
-    session: Session | null;
-    loading: boolean;
-    isAuthenticated: boolean;
-  };
-  
+export enum OnboardingStep {
+  NONE = 'none',
+  PROFILE = 'profile',
+  ASSESSMENT = 'assessment',
+  COMPLETED = 'completed'
+}
 
-export type AuthContextType = {
+export  type AuthContextType = {
     authState: AuthState;
     signOut: () => Promise<void>;
     refreshSession: () => Promise<void>;
+    setOnboardingStep: (state: OnboardingStep) => Promise<void>;
   };
+  
+export type AuthState = {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  onboardingStep?: OnboardingStep;
+};
+  
