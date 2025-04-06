@@ -5,11 +5,9 @@ import {
   checkAssessmentStatus,
   checkProfileStatus,
 } from "@/utils/auth/function";
-import { prettyJSON } from "@/utils/strings/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Session, User } from "@supabase/supabase-js";
+import { Session } from "@supabase/supabase-js";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 // Auth context with default values
@@ -106,38 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  // Set the onboarding step and save it to AsyncStorage
-  // const setOnboardingStep = async () => {
-  //   if (authState.onboardingStep) {
-  //     await AsyncStorage.setItem("onboardingStep", authState.onboardingStep);
-  //   } else {
-  //     await AsyncStorage.removeItem("onboardingStep");
-  //   }
-  // };
-
-  // // Check if user has completed profile setup
-  // const checkProfileStatus = async (userId: string) => {
-  //   try {
-  //     // Query your profile table in Supabase
-  //     const { data, error } = await supabase
-  //       .from('profiles')
-  //       .select('*')
-  //       .eq('id', userId)
-  //       .single();
-
-  //     if (error) {
-  //       console.error('Error checking profile:', error);
-  //       return false;
-  //     }
-
-  //     // Check if profile exists and has required fields
-  //     return data && data.name && data.bio; // adjust based on your required fields
-  //   } catch (error) {
-  //     console.error('Error in profile check:', error);
-  //     return false;
-  //   }
-  // };
-
   const handleSessionChange = async (session: Session | null) => {
     if (session) {
       setAuthState({
@@ -174,19 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/(public)/auth");
     }
   };
-
-  // // Handle navigation effects separately from auth state
-  // useEffect(() => {
-  //   // Only navigate once auth state is determined AND component is mounted
-  //   if (!authState.loading && isInitialized) {
-  //     // if (authState.user.)
-  //     if (authState.isAuthenticated) {
-  //       router.replace("/(app)/home");
-  //     } else {
-  //       router.replace("/(public)/auth");
-  //     }
-  //   }
-  // }, [authState.isAuthenticated, authState.loading, isInitialized]);
 
   // Handle navigation based on auth and onboarding state
   useEffect(() => {

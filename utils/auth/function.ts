@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthState } from "@/types/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AuthError } from "@supabase/supabase-js";
 import { nanoid } from 'nanoid';
 
 /**
@@ -231,29 +230,4 @@ export const signOut = async () => {
       return false;
     }
   };
-
-  //  // Determine the current onboarding step based on user's data
-  //  const determineOnboardingStep = async (userId: string) => {
-  //   // First check stored step in AsyncStorage
-  //   const storedStep = await AsyncStorage.getItem('onboardingStep');
-  //   if (storedStep) {
-  //     setOnboardingStepState(storedStep as OnboardingStep);
-  //     return;
-  //   }
-
-  //   // If no stored step, check user's progress
-  //   const hasProfile = await checkProfileStatus(userId);
-  //   if (!hasProfile) {
-  //     setOnboardingStep(OnboardingStep.PROFILE);
-  //     return;
-  //   }
-
-  //   const hasCompletedAssessment = await checkAssessmentStatus(userId);
-  //   if (!hasCompletedAssessment) {
-  //     setOnboardingStep(OnboardingStep.ASSESSMENT);
-  //     return;
-  //   }
-
-  //   // User has completed all steps
-  //   setOnboardingStep(OnboardingStep.COMPLETED);
-  // };
+  
