@@ -171,7 +171,9 @@ export const signOut = async () => {
 };
 
 // Check if user has completed profile setup
-export const checkProfileStatus = async (userId: string) => {
+export const checkProfileStatus = async (userId: string | undefined) => {
+  if (userId === undefined) return false
+
   try {
     // Query your profile table in Supabase
     const { data, error } = await supabase
@@ -194,7 +196,9 @@ export const checkProfileStatus = async (userId: string) => {
 };
 
 // Check if user has completed assessment
-export const checkAssessmentStatus = async (userId: string) => {
+export const checkAssessmentStatus = async (userId: string | undefined) => {
+  if (userId === undefined) return false
+  
   try {
     // Query your assessments table in Supabase
     const { data, error } = await supabase

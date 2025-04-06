@@ -1,4 +1,4 @@
-// app/(onboarding)/assessment.tsx
+// app/(onboard)/assessment.tsx
 import React, { useState } from "react";
 import {
   StyleSheet,

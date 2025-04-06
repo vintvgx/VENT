@@ -1,4 +1,4 @@
-// app/(onboarding)/profile.tsx
+// app/(onboard)/profile.tsx
 import { useState } from "react";
 import {
   StyleSheet,

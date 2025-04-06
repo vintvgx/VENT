@@ -68,9 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @param userId the id of the authenticated user
    * @returns
    */
-  const determineOnboardingStep = async (userId: string) => {
+  const determineOnboardingStep = async (userId: string | undefined) => {
     // First check stored step in AsyncStorage
     const storedStep = await AsyncStorage.getItem("onboardingStep");
+
+    console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
+
     if (storedStep) {
       setAuthState((prev) => ({
         ...prev,
@@ -81,6 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // If no stored step, check user's progress
     const hasProfile = await checkProfileStatus(userId);
+
+    console.log("🚀 ~ determineOnboardingStep ~ hasProfile:", hasProfile);
+
     if (!hasProfile) {
       setAuthState((prev) => ({
         ...prev,
@@ -156,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         onboardingStep: state,
       }));
-      
+
       try {
         await AsyncStorage.setItem("onboardingStep", state);
       } catch (error) {
@@ -168,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
+    console.log("Checking auth state and navigating!");
     if (authState.isLoading) return;
 
     if (isInitialized) {
@@ -182,8 +189,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authState.onboardingStep &&
         authState.onboardingStep !== OnboardingStep.COMPLETED
       ) {
+        console.warn(
+          `Onboard process not complete! Navigating to ${authState.onboardingStep}`
+        );
+        console.log("Current onboarding step:", authState.onboardingStep);
+        console.log(
+          "Navigation path:",
+          `/(onboard)/${authState.onboardingStep}`
+        );
         //@ts-ignore
-        router.replace(`/(onboarding)/${authState.onboardingStep}`);
+        router.replace(`/(onboard)/${authState.onboardingStep}`);
         return;
       }
 
@@ -197,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace("/(app)/home");
       }
     }
-  }, [authState.isAuthenticated, authState.isLoading, isInitialized]);
+  }, [authState, isInitialized]);
 
   // Subscribe to auth changes on mount
   useEffect(() => {
@@ -239,6 +254,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           async (event, session) => {
             console.log(`Supabase auth event: ${event}`);
             await handleSessionChange(session);
+
+            // Determine if onboarding process is complete
+            await determineOnboardingStep(session?.user.id);
 
             // Navigation will happen in the useEffect above
           }

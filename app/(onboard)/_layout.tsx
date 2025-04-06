@@ -1,13 +1,14 @@
-// app/(onboarding)/_layout.tsx
+// app/(onboard)/_layout.tsx
 import { Redirect, Stack } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { useAuth } from '@/context/auth/AuthContext';
 import { OnboardingStep } from '@/types/auth';
+import { Button } from '@/components/ui/button';
 
 export default function OnboardingLayout() {
-  const { authState } = useAuth();
+  const { authState, signOut } = useAuth();
   
   // Show loading indicator while checking auth state
   if (authState.isLoading) {
@@ -46,6 +47,9 @@ export default function OnboardingLayout() {
             ]} 
           />
         </View>
+      </View>
+      <View>
+        <Button onPress={signOut}>Sign Out</Button>
       </View>
       
       <Stack 
