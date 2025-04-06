@@ -22,15 +22,15 @@ export interface UserModel {
  * (supabase.auth.data)
  */
   export interface UserMetaData {
-    firstName?: string | null | undefined ;
-    lastName?: string | null | undefined;
-    username?: string | null | undefined;
-    createdAt?: Date | string | null | undefined;
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string;
+    createdAt?: Date | string | null;
     isAnonymous?: boolean; 
     lastActiveAt?: Date;
     phoneNumber?: string;
     avatar?: string;
-    email?: string | null | undefined;
+    email?: string | null;
   }
   
   /**

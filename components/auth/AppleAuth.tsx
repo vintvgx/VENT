@@ -33,7 +33,7 @@ const AppleAuth = () => {
             // Update user metadata if sign-in was successful
             if (data.user) {
               const metadataResult = await updateUserMetadata({
-                firstName: credential.fullName?.givenName,
+                firstName: credential.fullName!!.givenName,
                 lastName: credential.fullName?.familyName,
                 email: credential.email,
               });

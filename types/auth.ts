@@ -24,12 +24,6 @@ export type AuthState = {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  onboardingStep?: OnboardingStep | null;
+  onboardingStep?: OnboardingStep;
 };
   
-
-// export type AuthContextType = {
-//     authState: AuthState;
-//     signOut: () => Promise<void>;
-//     refreshSession: () => Promise<void>;
-//   };

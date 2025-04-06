@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authState.onboardingStep !== OnboardingStep.COMPLETED
       ) {
         //@ts-ignore
-        router.replace(`/(onboarding)/${onboardingStep}`);
+        router.replace(`/(onboarding)/${authState.onboardingStep}`);
         return;
       }
 
@@ -214,10 +214,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (currentSession) {
-          // Detemine if onboarding process is complete
-          await determineOnboardingStep(currentSession.user.id);
           // Set initial auth state with current session
           await handleSessionChange(currentSession);
+
+          // Determine if onboarding process is complete
+          await determineOnboardingStep(currentSession.user.id);
         } else {
           // No active session
           setAuthState((prev) => ({

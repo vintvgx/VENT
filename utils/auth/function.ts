@@ -172,15 +172,6 @@ export const signOut = async () => {
   }
 };
 
-// Set the onboarding step and save it to AsyncStorage
-const setOnboardingStep = async (state: AuthState) => {
-  if (state.onboardingStep) {
-    await AsyncStorage.setItem("onboardingStep", state.onboardingStep);
-  } else {
-    await AsyncStorage.removeItem("onboardingStep");
-  }
-};
-
 // Check if user has completed profile setup
 export const checkProfileStatus = async (userId: string) => {
   try {
