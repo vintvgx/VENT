@@ -71,8 +71,6 @@ export const signInWithOtp = async (mobile: string) => {
     // Log success with response data
     console.log("OTP request successful. Response:", data);
     return { success: true, data };
-
-    return { success: true };
   } catch (error) {
     console.error("OTP Error:", error);
     return { message: "An unexpected error occurred" };

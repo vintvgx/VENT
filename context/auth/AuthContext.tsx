@@ -156,7 +156,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         onboardingStep: state,
       }));
-      await AsyncStorage.setItem("onboardingStep", state);
+      
+      try {
+        await AsyncStorage.setItem("onboardingStep", state);
+      } catch (error) {
+        console.error("Error saving onboarding step to AsyncStorage:", error);
+        // State is already updated in memory, so we can continue even if storage fails
+      }
     }
   };
 
