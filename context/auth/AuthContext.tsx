@@ -69,66 +69,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @returns
    */
   const determineOnboardingStep = async (userId: string | undefined) => {
-    // First check stored step in AsyncStorage
-    const storedStep = await AsyncStorage.getItem("onboardingStep");
+    try {
+      // First check stored step in AsyncStorage
+      const storedStep = await AsyncStorage.getItem("onboardingStep");
 
-    console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
+      console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
 
-    if (storedStep) {
+      if (storedStep) {
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: storedStep as OnboardingStep,
+        }));
+        return;
+      }
+
+      // If no stored step, check user's progress
+      const hasProfile = await checkProfileStatus(userId);
+
+      console.log("🚀 ~ determineOnboardingStep ~ hasProfile:", hasProfile);
+
+      if (!hasProfile) {
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: OnboardingStep.PROFILE,
+        }));
+        return;
+      }
+
+      const hasCompletedAssessment = await checkAssessmentStatus(userId);
+      if (!hasCompletedAssessment) {
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: OnboardingStep.ASSESSMENT,
+        }));
+        return;
+      }
+
+      // User has completed all steps
       setAuthState((prev) => ({
         ...prev,
-        onboardingStep: storedStep as OnboardingStep,
+        onboardingStep: OnboardingStep.COMPLETED,
       }));
-      return;
-    }
-
-    // If no stored step, check user's progress
-    const hasProfile = await checkProfileStatus(userId);
-
-    console.log("🚀 ~ determineOnboardingStep ~ hasProfile:", hasProfile);
-
-    if (!hasProfile) {
+    } catch (error) {
+      console.error("Error determining onboarding step:", error);
+      // In case of error, set a default
       setAuthState((prev) => ({
         ...prev,
-        onboardingStep: OnboardingStep.PROFILE,
+        onboardingStep: OnboardingStep.PROFILE, // Default to beginning of onboarding
       }));
-      return;
     }
-
-    const hasCompletedAssessment = await checkAssessmentStatus(userId);
-    if (!hasCompletedAssessment) {
-      setAuthState((prev) => ({
-        ...prev,
-        onboardingStep: OnboardingStep.ASSESSMENT,
-      }));
-      return;
-    }
-
-    // User has completed all steps
-    setAuthState((prev) => ({
-      ...prev,
-      onboardingStep: OnboardingStep.COMPLETED,
-    }));
   };
 
+  /**
+   * Handles session state changes in the authentication flow.
+   *
+   * This function updates the authentication state based on the current session.
+   * It follows a two-step approach to prevent premature navigation:
+   * 1. First updates user and session data while keeping the loading state active
+   * 2. Determines the appropriate onboarding step for the user
+   * 3. Finally completes the state update by setting isLoading to false
+   *
+   * This approach ensures the application won't navigate to the home screen
+   * before the onboarding status has been properly determined.
+   *
+   * @param session - The current Supabase session or null if no active session
+   */
   const handleSessionChange = async (session: Session | null) => {
     if (session) {
-      setAuthState({
+      setAuthState((prev) => ({
+        ...prev,
         user: session.user,
         session,
-        isLoading: false,
         isAuthenticated: true,
-      });
+        isLoading: true
+        // Keep isLoading true until we check onboarding
+      }));
+
+      // Determine onboarding step before completing state update
+      await determineOnboardingStep(session.user.id);
+
+      // Update the state
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }));
     } else {
       setAuthState({
         user: null,
         session: null,
         isLoading: false,
         isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
       });
     }
   };
 
+  /*
+   * Signs out the active authenticated user.
+   */
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -237,9 +275,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession) {
           // Set initial auth state with current session
           await handleSessionChange(currentSession);
-
-          // Determine if onboarding process is complete
-          await determineOnboardingStep(currentSession.user.id);
         } else {
           // No active session
           setAuthState((prev) => ({
@@ -254,9 +289,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           async (event, session) => {
             console.log(`Supabase auth event: ${event}`);
             await handleSessionChange(session);
-
-            // Determine if onboarding process is complete
-            await determineOnboardingStep(session?.user.id);
 
             // Navigation will happen in the useEffect above
           }
