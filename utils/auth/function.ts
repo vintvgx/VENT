@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase/supabase";
+import { AuthState } from "@/types/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthError } from "@supabase/supabase-js";
 import { nanoid } from 'nanoid';
 
@@ -174,3 +176,84 @@ export const signOut = async () => {
     return { success: false, message: 'An unexpected error occurred' };
   }
 };
+
+  // Set the onboarding step and save it to AsyncStorage
+  const setOnboardingStep = async (state: AuthState) => {
+    if (state.onboardingStep) {
+      await AsyncStorage.setItem("onboardingStep", state.onboardingStep);
+    } else {
+      await AsyncStorage.removeItem("onboardingStep");
+    }
+  };
+
+  // Check if user has completed profile setup
+  export const checkProfileStatus = async (userId: string) => {
+    try {
+      // Query your profile table in Supabase
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error checking profile:', error);
+        return false;
+      }
+
+      // Check if profile exists and has required fields
+      return data && data.name && data.bio; // adjust based on your required fields
+    } catch (error) {
+      console.error('Error in profile check:', error);
+      return false;
+    }
+  };
+
+   // Check if user has completed assessment
+  export const checkAssessmentStatus = async (userId: string) => {
+    try {
+      // Query your assessments table in Supabase
+      const { data, error } = await supabase
+        .from('assessments')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error checking assessment:', error);
+        return false;
+      }
+
+      // Check if assessment exists and is complete
+      return data && data.completed;
+    } catch (error) {
+      console.error('Error in assessment check:', error);
+      return false;
+    }
+  };
+
+  //  // Determine the current onboarding step based on user's data
+  //  const determineOnboardingStep = async (userId: string) => {
+  //   // First check stored step in AsyncStorage
+  //   const storedStep = await AsyncStorage.getItem('onboardingStep');
+  //   if (storedStep) {
+  //     setOnboardingStepState(storedStep as OnboardingStep);
+  //     return;
+  //   }
+
+  //   // If no stored step, check user's progress
+  //   const hasProfile = await checkProfileStatus(userId);
+  //   if (!hasProfile) {
+  //     setOnboardingStep(OnboardingStep.PROFILE);
+  //     return;
+  //   }
+
+  //   const hasCompletedAssessment = await checkAssessmentStatus(userId);
+  //   if (!hasCompletedAssessment) {
+  //     setOnboardingStep(OnboardingStep.ASSESSMENT);
+  //     return;
+  //   }
+
+  //   // User has completed all steps
+  //   setOnboardingStep(OnboardingStep.COMPLETED);
+  // };
