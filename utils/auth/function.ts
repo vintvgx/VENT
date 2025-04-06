@@ -28,7 +28,7 @@ export const updateUserMetadata = async (
     const metadataToUpdate = {
       first_name: userData?.firstName || "",
       last_name: userData?.lastName || "",
-      username: await generateUsername(),
+      username: userData?.username || await generateUsername(),
       avatar_url: userData?.avatar || "",
       mobile: userData?.phoneNumber || "",
       email: userData?.email || "",
