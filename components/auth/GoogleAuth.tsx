@@ -7,8 +7,11 @@ import {
 } from "@react-native-google-signin/google-signin";
 import { supabase } from "@/lib/supabase/supabase";
 import { updateUserMetadata } from "@/utils/auth/function";
+import { TOAST, useShowToast } from "../ui/toast/useToast";
 
 export default function () {
+  const showToast = useShowToast();
+
   GoogleSignin.configure({
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
     iosClientId:
@@ -53,12 +56,17 @@ export default function () {
                   "User created but metadata update failed:",
                   metadataResult.error
                 );
-                //TODO display Toast when error occurs
-
+                showToast(
+                  TOAST.INFO,
+                  `${data.user.email} authenticated successfully. METADATA NOT UPDATED!`
+                );
                 return;
               }
               console.log("User metadata saved successfully");
             }
+
+            console.log("Google authentication successful:", data.user);
+            showToast(TOAST.SUCCESS, `${user.email} authenticated successfully`)
           }
         } catch (error: any) {
           if (error.code === statusCodes.SIGN_IN_CANCELLED) {

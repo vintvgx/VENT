@@ -3,8 +3,11 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import React from "react";
 import { supabase } from "@/lib/supabase/supabase";
 import { updateUserMetadata } from "@/utils/auth/function";
+import { TOAST, useShowToast } from "../ui/toast/useToast";
 
 const AppleAuth = () => {
+  const showToast = useShowToast();
+
   return (
     <AppleAuthentication.AppleAuthenticationButton
       buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
@@ -43,18 +46,24 @@ const AppleAuth = () => {
                   "User created but metadata update failed:",
                   metadataResult.error
                 );
-                //TODO display Toast when error occurs
+                showToast(
+                  TOAST.INFO,
+                  "User authenticated successfully. METADATA NOT UPDATED!"
+                );
                 return;
               }
+
               console.log("User metadata saved successfully");
             }
 
             // User is signed in
             console.log("Apple authentication successful:", data.user);
+            showToast(TOAST.SUCCESS, `${data.user.email} authenticated successfully`)
           } else {
             throw new Error("No identityToken.");
           }
         } catch (e: unknown) {
+          showToast(TOAST.ERROR, e as string)
           if (
             e instanceof Error &&
             "code" in e &&

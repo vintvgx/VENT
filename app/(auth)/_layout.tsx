@@ -26,7 +26,7 @@ export default function AuthLayout() {
   // If in onboarding, redirect to appropriate step
   if (onboardingStep && onboardingStep !== 'completed') {
     //@ts-ignore
-    return <Redirect href={`/(onboarding)/${onboardingStep}`} />;
+    return <Redirect href={`/(onboarding)/${onboardingStep as string}`} />
   }
 
   return (
