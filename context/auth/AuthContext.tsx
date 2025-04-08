@@ -153,7 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Keep isLoading true until we check onboarding
       }));
 
-      // Determine onboarding step before completing state update
+      //Update the state with the final loading state
+      // The onboardingStep is already set by determineOnboardingStep
       await determineOnboardingStep(session.user.id);
 
       // Update the state

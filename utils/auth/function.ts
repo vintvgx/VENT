@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthState } from "@/types/auth";
-import { UserMetaData } from "@/types/user/user";
+import { UserMetaData, UserType } from "@/types/user/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nanoid } from "nanoid";
 
@@ -188,7 +188,7 @@ export const checkRoleStatus = async (userId: string | undefined) => {
     }
 
     // Check if role exists and is either 'host' or 'client'
-    return data && data.role && (data.role === 'host' || data.role === 'client');
+    return data && data.role && (data.role === UserType.HOST || data.role === UserType.CLIENT);
   } catch (error) {
     console.error('Error in role check:', error);
     return false;
