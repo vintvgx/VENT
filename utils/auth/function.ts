@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthState } from "@/types/auth";
-import { UserMetaData } from "@/types/user";
+import { UserMetaData } from "@/types/user/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { nanoid } from "nanoid";
 
@@ -167,6 +167,31 @@ export const signOut = async () => {
   } catch (error) {
     console.error("Sign Out Error:", error);
     return { success: false, message: "An unexpected error occurred" };
+  }
+};
+
+// Check if user has selected a role
+export const checkRoleStatus = async (userId: string | undefined) => {
+  if (userId === undefined) return false
+
+  try {
+    // Query profiles table in Supabase
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error checking role:', error);
+      return false;
+    }
+
+    // Check if role exists and is either 'host' or 'client'
+    return data && data.role && (data.role === 'host' || data.role === 'client');
+  } catch (error) {
+    console.error('Error in role check:', error);
+    return false;
   }
 };
 

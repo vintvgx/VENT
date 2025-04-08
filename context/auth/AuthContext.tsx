@@ -4,6 +4,7 @@ import { AuthContextType, AuthState, OnboardingStep } from "@/types/auth";
 import {
   checkAssessmentStatus,
   checkProfileStatus,
+  checkRoleStatus,
 } from "@/utils/auth/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
@@ -84,6 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If no stored step, check user's progress
+      // Check if user has selected a role
+      const hasSelectedRole = await checkRoleStatus(userId);
+      if (!hasSelectedRole) {
+        setOnboardingStep(OnboardingStep.ROLE);
+        return;
+      }
+
       const hasProfile = await checkProfileStatus(userId);
 
       console.log("🚀 ~ determineOnboardingStep ~ hasProfile:", hasProfile);
@@ -141,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session.user,
         session,
         isAuthenticated: true,
-        isLoading: true
+        isLoading: true,
         // Keep isLoading true until we check onboarding
       }));
 
@@ -212,7 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
-    console.log("Checking auth state and navigating!");
+    console.log("Handling navigation based on auth and onboarding state");
     if (authState.isLoading) return;
 
     if (isInitialized) {
