@@ -3,20 +3,30 @@ import { User } from "@supabase/supabase-js";
 /**
  * Represents a user in the system, including their basic information,
  * profile data, and onboarding selections.
-*/
+ */
 export interface UserModel {
-    user: User;
-    firstName: string;
-    lastName: string;
-    username: string;
-    dob: Date | string; 
-    isAnonymous: boolean; // Flag for anonymous users
-    profileCompletionPercentage: number; // Track completion
-    profile: ProfileModel;
-    onboardSelections: OnboardSelection; // Link to onboarding data
-    createdAt: Date;
-    lastActiveAt: Date;
-  }
+  user: User;
+  firstName: string;
+  lastName: string;
+  username: string;
+  dob: Date | string;
+  isAnonymous: boolean; // Flag for anonymous users
+  profileCompletionPercentage: number; // Track completion
+  profile: ProfileModel;
+  onboardSelections: OnboardSelection; // Link to onboarding data
+  createdAt: Date;
+  lastActiveAt: Date;
+  userType: UserType; // Host or Client identifier
+}
+
+/**
+ * Enum to identify user types in the system
+ */
+export enum UserType {
+  HOST = 'host',
+  CLIENT = 'client'
+}
+
 /**
  * Represents the values stored within the user metadata 
  * (supabase.auth.data)
@@ -31,6 +41,7 @@ export interface UserModel {
     phoneNumber?: string;
     avatar?: string;
     email?: string | null;
+    userType?: UserType;
   }
   
   /**
@@ -40,7 +51,6 @@ export interface ProfileModel {
     // Existing fields
     topicsOfInterest: Array<{topic: string, relevanceScore: number}>;
     experience: Array<{area: string, relevanceScore: number}>;
-    // Consider adding:
     preferredCommunicationStyle: string; // e.g. "direct", "nurturing", "analytical"
     boundariesAndTriggers?: string[]; // Optional personal boundaries
     availabilityPreferences?: string; // When they prefer to engage
@@ -74,3 +84,18 @@ export interface OnboardSelection {
  * 4. Welcome to Home
  * 5. Progressive profile completion (prompted over time)
  */
+
+  /**
+ * Type for creating a new user with minimal required information
+ */
+export type NewUserInput = {
+  email?: string;
+  phoneNumber?: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  dob: Date | string;
+  isAnonymous?: boolean;
+  userType: UserType;
+};
+

@@ -30,8 +30,19 @@ export default function OnboardingLayout() {
   }
   
   // Create progress tracker based on current step
-  const totalSteps = 2; // Profile and Assessment
-  const currentStep = authState.onboardingStep === OnboardingStep.PROFILE ? 1 : 2;
+  const totalSteps = 3; // Role, Profile and Assessment
+  const currentStep = (() => {
+    switch (authState.onboardingStep) {
+      case OnboardingStep.ROLE:
+        return 1;
+      case OnboardingStep.PROFILE:
+        return 2;
+      case OnboardingStep.ASSESSMENT:
+        return 3;
+      default:
+        return 1;
+    }
+  })();
   
   return (
     <ThemedView style={styles.container}>

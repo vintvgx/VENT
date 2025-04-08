@@ -7,6 +7,7 @@ import { Session, User } from '@supabase/supabase-js';
 // - isAuthenticated: Whether there is an active authenticated session
 export enum OnboardingStep {
   NONE = 'none',
+  ROLE = 'role',
   PROFILE = 'profile',
   ASSESSMENT = 'assessment',
   COMPLETED = 'completed'
