@@ -64,3 +64,7 @@ eas build --profile development --platform all
 
 //command to run development build in development
 expo start --dev-client
+
+
+
+4/8 no development 
