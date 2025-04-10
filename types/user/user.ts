@@ -54,6 +54,8 @@ export interface ProfileModel {
     preferredCommunicationStyle: string; // e.g. "direct", "nurturing", "analytical"
     boundariesAndTriggers?: string[]; // Optional personal boundaries
     availabilityPreferences?: string; // When they prefer to engage
+    occupation?: string; // TODO required for host / optional for client ?
+
   }
   
 /**
