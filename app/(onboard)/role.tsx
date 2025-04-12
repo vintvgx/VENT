@@ -35,12 +35,14 @@ import { useAuth } from "@/context/auth/AuthContext";
 import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 import { UserType } from "@/types/user/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { OnboardingStep } from "@/types/auth";
 
 export default function role() {
   const showToast = useShowToast();
 
   const {
     authState: { user },
+    setOnboardingStep,
   } = useAuth();
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,16 +95,22 @@ export default function role() {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
         role: selectedRole,
-        updated_at: new Date(),
+        last_active_at: new Date(),
+        username: `temp_${user.id.substring(0, 8)}`,
+        dob: "01/01/1990", 
+        updated_at: new Date()
       });
 
       if (error) throw error;
 
-      // Update the onboarding step in AuthContext
-      await AsyncStorage.setItem("onboardingStep", "profile");
+      try {
+        // Move to next step
+        await setOnboardingStep(OnboardingStep.ASSESSMENT);
+        } catch (stepError: unknown) {
+          console.error("Error updating onboarding step:", stepError);
+          showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
+        }
 
-      // Continue to the next step in onboarding
-      router.replace("/(onboard)/profile");
     } catch (error) {
       console.error("Error saving role:", error);
       setError("Failed to save your selection. Please try again.");

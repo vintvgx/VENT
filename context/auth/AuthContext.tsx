@@ -86,21 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // If no stored step, check user's progress
       // Check if user has selected a role
-      const hasSelectedRole = await checkRoleStatus(userId);
-      if (!hasSelectedRole) {
-        setOnboardingStep(OnboardingStep.ROLE);
-        return;
-      }
-
       const hasProfile = await checkProfileStatus(userId);
-
-      console.log("🚀 ~ determineOnboardingStep ~ hasProfile:", hasProfile);
-
       if (!hasProfile) {
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.PROFILE,
         }));
+        return;
+      }
+
+      const hasSelectedRole = await checkRoleStatus(userId);
+      if (!hasSelectedRole) {
+        setOnboardingStep(OnboardingStep.ROLE);
         return;
       }
 
