@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+"use client"
+
+import { useState, useEffect, useRef } from "react"
 import {
   StyleSheet,
   View,
@@ -11,124 +13,212 @@ import {
   Platform,
   Keyboard,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback
-} from "react-native";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ThemedText";
-import { supabase } from "@/lib/supabase/supabase";
-import { useAuth } from "@/context/auth/AuthContext";
-import { OnboardingStep } from "@/types/auth";
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
-import { Calendar, ChevronDown } from 'lucide-react-native';
+  TouchableWithoutFeedback,
+  Animated,
+} from "react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { Button } from "@/components/ui/button"
+import { ThemedText } from "@/components/ThemedText"
+import { supabase } from "@/lib/supabase/supabase"
+import { useAuth } from "@/context/auth/AuthContext"
+import { OnboardingStep } from "@/types/auth"
+import { TOAST, useShowToast } from "@/components/ui/toast/useToast"
+import { Calendar, Check } from "lucide-react-native"
+import React from "react"
+import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile"
+import { ProfileController } from '@/controller/onboard/ProfileController';
 
 export default function ProfileScreen() {
-  const showToast = useShowToast();
+  const showToast = useShowToast()
 
   const {
     authState: { user },
     setOnboardingStep,
-  } = useAuth();
-  
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  } = useAuth()
+
+  // Form fields
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [username, setUsername] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null)
+  const [stayAnonymous, setStayAnonymous] = useState(false)
+
+  // UI state
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [isUnderage, setIsUnderage] = useState(false)
+
+  // Step management
+  const [currentStep, setCurrentStep] = useState<ProfileStep>(ProfileStep.NAME_DOB)
+  const slideAnim = useRef(new Animated.Value(0)).current
+
+  // Date picker state
+  const [pickerYear, setPickerYear] = useState(dateOfBirth?.getFullYear() || new Date().getFullYear() - 20)
+  const [pickerMonth, setPickerMonth] = useState(dateOfBirth?.getMonth() || 0)
+  const [pickerDay, setPickerDay] = useState(dateOfBirth?.getDate() || 1)
+
+  // Load saved data on initial render
+  useEffect(() => {
+    loadSavedData()
+  }, [])
 
   // Keyboard listeners
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true)
+    })
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false)
+    })
 
     return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
+      keyboardDidHideListener.remove()
+      keyboardDidShowListener.remove()
+    }
+  }, [])
 
   // Populate fields with existing data if available
   useEffect(() => {
     if (user?.user_metadata) {
-      const metadata = user.user_metadata;
-      if (metadata.firstName) setFirstName(metadata.firstName);
-      if (metadata.lastName) setLastName(metadata.lastName);
-      if (metadata.username) setUsername(metadata.username);
-      if (metadata.phoneNumber) setPhoneNumber(metadata.phoneNumber);
+      const metadata = user.user_metadata
+      if (metadata.firstName) setFirstName(metadata.firstName)
+      if (metadata.lastName) setLastName(metadata.lastName)
+      if (metadata.username) setUsername(metadata.username)
+      if (metadata.phoneNumber) setPhoneNumber(metadata.phoneNumber)
       if (metadata.createdAt) {
         try {
-          setDateOfBirth(new Date(metadata.createdAt));
+          const dob = new Date(metadata.createdAt)
+          setDateOfBirth(dob)
+          setPickerYear(dob.getFullYear())
+          setPickerMonth(dob.getMonth())
+          setPickerDay(dob.getDate())
+          ProfileController.checkAge(dob)
         } catch (e) {
-          console.error("Invalid date format:", e);
+          console.error("Invalid date format:", e)
         }
       }
     }
-  }, [user]);
+  }, [user])
+
+
+  // Load saved data from AsyncStorage
+  const loadSavedData = async () => {
+    try {
+      // Get all saved values
+      const [savedStep, savedFirstName, savedLastName, savedDOB, savedAnonymous, savedUsername, savedPhone] =
+        await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.PROFILE_STEP),
+          AsyncStorage.getItem(STORAGE_KEYS.FIRST_NAME),
+          AsyncStorage.getItem(STORAGE_KEYS.LAST_NAME),
+          AsyncStorage.getItem(STORAGE_KEYS.DATE_OF_BIRTH),
+          AsyncStorage.getItem(STORAGE_KEYS.STAY_ANONYMOUS),
+          AsyncStorage.getItem(STORAGE_KEYS.USERNAME),
+          AsyncStorage.getItem(STORAGE_KEYS.PHONE_NUMBER),
+        ])
+
+      // Set values if they exist
+      if (savedFirstName) setFirstName(savedFirstName)
+      if (savedLastName) setLastName(savedLastName)
+      if (savedAnonymous) setStayAnonymous(savedAnonymous === "true")
+      if (savedUsername) setUsername(savedUsername)
+      if (savedPhone) setPhoneNumber(savedPhone)
+
+      // Handle date of birth
+      if (savedDOB) {
+        const dob = new Date(savedDOB)
+        setDateOfBirth(dob)
+        setPickerYear(dob.getFullYear())
+        setPickerMonth(dob.getMonth())
+        setPickerDay(dob.getDate())
+        ProfileController.checkAge(dob)
+      }
+
+      // Navigate to the appropriate step
+      if (savedStep) {
+        const step = Number.parseInt(savedStep)
+        if (!isNaN(step)) {
+          // Determine which step to navigate to based on completed data
+          let targetStep = step as ProfileStep
+
+          // If we have name and DOB but no username, go to username step
+          if (targetStep >= ProfileStep.USERNAME && !savedUsername) {
+            targetStep = ProfileStep.USERNAME
+          }
+          // If we have username but no phone, go to phone step
+          else if (targetStep >= ProfileStep.PHONE_NUMBER && !savedPhone) {
+            targetStep = ProfileStep.PHONE_NUMBER
+          }
+
+          animateToStep(targetStep)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading saved data:", error)
+    }
+  }
+
+  // Animate between steps
+  const animateToStep = (step: ProfileStep) => {
+    Animated.timing(slideAnim, {
+      toValue: -step * 100, // Slide left based on step
+      duration: 300,
+      useNativeDriver: true,
+    }).start()
+    setCurrentStep(step)
+  }
 
   const validateUsername = (value: string) => {
     if (!value.trim()) {
-      setUsernameError("Username is required");
-      return false;
+      setUsernameError("Username is required")
+      return false
     }
-    
+
     // Add additional validation rules if needed
     // For example: only alphanumeric characters and underscores
     if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores");
-      return false;
+      setUsernameError("Username can only contain letters, numbers, and underscores")
+      return false
     }
-    
-    setUsernameError(null);
-    return true;
-  };
 
-  const formatDate = (date: Date | null) => {
-    if (!date) return "";
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+    setUsernameError(null)
+    return true
+  }
 
   const handleDateSelect = (date: Date) => {
-    setDateOfBirth(date);
-    setShowDatePicker(false);
-  };
+    setDateOfBirth(date)
+    setShowDatePicker(false)
+    ProfileController.checkAge(date)
+  }
 
   // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetimepicker
   const renderDatePickerModal = () => {
     // This is a simplified date picker. In a production app, you would use a proper date picker component
-    const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+    const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i)
     const months = [
-      "January", "February", "March", "April", "May", "June", 
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
-    
-    const [year, setYear] = useState(dateOfBirth?.getFullYear() || new Date().getFullYear() - 20);
-    const [month, setMonth] = useState(dateOfBirth?.getMonth() || 0);
-    const [day, setDay] = useState(dateOfBirth?.getDate() || 1);
-    
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ]
+    const days = Array.from({ length: 31 }, (_, i) => i + 1)
+
     const confirmDate = () => {
-      const newDate = new Date(year, month, day);
-      handleDateSelect(newDate);
-    };
-    
+      const newDate = new Date(pickerYear, pickerMonth, pickerDay)
+      handleDateSelect(newDate)
+    }
+
     return (
       <Modal
         visible={showDatePicker}
@@ -139,153 +229,225 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.datePickerContainer}>
             <ThemedText style={styles.datePickerTitle}>Select Date of Birth</ThemedText>
-            
+
             <View style={styles.datePickerControls}>
               {/* Month Picker */}
               <View style={styles.datePickerColumn}>
                 <ThemedText style={styles.datePickerLabel}>Month</ThemedText>
                 <ScrollView style={styles.datePickerScroll}>
                   {months.map((monthName, index) => (
-                    <TouchableOpacity 
-                      key={monthName} 
-                      style={[
-                        styles.datePickerItem,
-                        month === index && styles.datePickerItemSelected
-                      ]}
-                      onPress={() => setMonth(index)}
+                    <TouchableOpacity
+                      key={monthName}
+                      style={[styles.datePickerItem, pickerMonth === index && styles.datePickerItemSelected]}
+                      onPress={() => setPickerMonth(index)}
                     >
-                      <ThemedText style={month === index ? styles.datePickerTextSelected : {}}>
+                      <ThemedText style={pickerMonth === index ? styles.datePickerTextSelected : {}}>
                         {monthName}
                       </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               </View>
-              
+
               {/* Day Picker */}
               <View style={styles.datePickerColumn}>
                 <ThemedText style={styles.datePickerLabel}>Day</ThemedText>
                 <ScrollView style={styles.datePickerScroll}>
                   {days.map((d) => (
-                    <TouchableOpacity 
-                      key={d} 
-                      style={[
-                        styles.datePickerItem,
-                        day === d && styles.datePickerItemSelected
-                      ]}
-                      onPress={() => setDay(d)}
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.datePickerItem, pickerDay === d && styles.datePickerItemSelected]}
+                      onPress={() => setPickerDay(d)}
                     >
-                      <ThemedText style={day === d ? styles.datePickerTextSelected : {}}>
-                        {d}
-                      </ThemedText>
+                      <ThemedText style={pickerDay === d ? styles.datePickerTextSelected : {}}>{d}</ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               </View>
-              
+
               {/* Year Picker */}
               <View style={styles.datePickerColumn}>
                 <ThemedText style={styles.datePickerLabel}>Year</ThemedText>
                 <ScrollView style={styles.datePickerScroll}>
                   {years.map((y) => (
-                    <TouchableOpacity 
-                      key={y} 
-                      style={[
-                        styles.datePickerItem,
-                        year === y && styles.datePickerItemSelected
-                      ]}
-                      onPress={() => setYear(y)}
+                    <TouchableOpacity
+                      key={y}
+                      style={[styles.datePickerItem, pickerYear === y && styles.datePickerItemSelected]}
+                      onPress={() => setPickerYear(y)}
                     >
-                      <ThemedText style={year === y ? styles.datePickerTextSelected : {}}>
-                        {y}
-                      </ThemedText>
+                      <ThemedText style={pickerYear === y ? styles.datePickerTextSelected : {}}>{y}</ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               </View>
             </View>
-            
+
             <View style={styles.datePickerButtons}>
-              <Button 
-                size="sm" 
-                action="secondary" 
+              <Button
+                size="sm"
+                action="secondary"
                 onPress={() => setShowDatePicker(false)}
                 style={styles.datePickerButton}
               >
                 <Text>Cancel</Text>
               </Button>
-              <Button 
-                size="sm" 
-                action="primary" 
-                onPress={confirmDate}
-                style={styles.datePickerButton}
-              >
+              <Button size="sm" action="primary" onPress={confirmDate} style={styles.datePickerButton}>
                 <Text>Confirm</Text>
               </Button>
             </View>
           </View>
         </View>
       </Modal>
-    );
-  };
+    )
+  }
+
+  const handleNextStep = async () => {
+    if (currentStep === ProfileStep.NAME_DOB) {
+      // Validate DOB is selected
+      if (!dateOfBirth && !stayAnonymous) {
+        showToast(TOAST.ERROR, "Please select your date of birth")
+        return
+      }
+
+      // Check age if DOB is provided
+      if (dateOfBirth && !ProfileController.checkAge(dateOfBirth)) {
+        showToast(TOAST.INFO, "Users must be over the age of 18 to use VENT :(")
+        return // Don't proceed if underage
+      }
+
+      // Save progress and move to next step
+      await ProfileController.saveToStorage(ProfileStep.NAME_DOB, {
+        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
+      })
+
+      animateToStep(ProfileStep.USERNAME)
+    } else if (currentStep === ProfileStep.USERNAME) {
+      // Validate username
+      if (!validateUsername(username)) {
+        return
+      }
+
+      // Save progress and move to next step
+      await ProfileController.saveToStorage(ProfileStep.USERNAME, {
+        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
+      })
+      animateToStep(ProfileStep.PHONE_NUMBER)
+    } else {
+      // Final step - save profile
+      await ProfileController.saveToStorage(ProfileStep.PHONE_NUMBER, {
+        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
+      })
+
+      saveProfile()
+    }
+  }
+
+  const handlePrevStep = () => {
+    if (currentStep === ProfileStep.USERNAME) {
+      animateToStep(ProfileStep.NAME_DOB)
+    } else if (currentStep === ProfileStep.PHONE_NUMBER) {
+      animateToStep(ProfileStep.USERNAME)
+    }
+  }
 
   const saveProfile = async () => {
     // Dismiss keyboard
-    Keyboard.dismiss();
-    
-    // Validate username first as it's required
+    Keyboard.dismiss()
+
+    // Validate username as it's required
     if (!validateUsername(username)) {
-      return;
+      animateToStep(ProfileStep.USERNAME)
+      return
     }
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error("User not authenticated")
 
       // Create profile in Supabase
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        firstName: stayAnonymous ? "" : firstName.trim(),
+        lastName: stayAnonymous ? "" : lastName.trim(),
         username: username.trim(),
         phoneNumber: phoneNumber.trim(),
         dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
+        isAnonymous: stayAnonymous,
         updated_at: new Date(),
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
       try {
-        // Move to next step
-        await setOnboardingStep(OnboardingStep.ROLE);
-      } catch (stepError: unknown) {
-        console.error("Error updating onboarding step:", stepError);
-        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`);
-      }
+        // Clear saved progress data since onboarding is complete
+        await Promise.all(Object.values(STORAGE_KEYS).map((key) => AsyncStorage.removeItem(key)))
 
+        // Move to next step
+        await setOnboardingStep(OnboardingStep.ROLE)
+      } catch (stepError: unknown) {
+        console.error("Error updating onboarding step:", stepError)
+        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
+      }
     } catch (error) {
-      console.error("Error saving profile:", error);
-      setError("Failed to save profile. Please try again.");
-      showToast(TOAST.ERROR, "Failed to save profile. Please try again.");
+      console.error("Error saving profile:", error)
+      setError("Failed to save profile. Please try again.")
+      showToast(TOAST.ERROR, "Failed to save profile. Please try again.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  // Step progress indicator
+  const renderStepIndicator = () => {
+    return (
+      <View style={styles.stepIndicator}>
+        {[0, 1, 2].map((step) => (
+          <View key={step} style={[styles.stepDot, currentStep === step ? styles.activeStepDot : {}]} />
+        ))}
+      </View>
+    )
+  }
+
+  // Toggle for anonymous mode
+  const renderAnonymousToggle = () => {
+    return (
+      <TouchableOpacity style={styles.anonymousToggle} onPress={() => setStayAnonymous(!stayAnonymous)}>
+        <View style={[styles.toggleBox, stayAnonymous ? styles.toggleBoxActive : {}]}>
+          {stayAnonymous && <Check size={16} color="#FFFFFF" />}
+        </View>
+        <ThemedText style={styles.toggleText}>Stay anonymous (hide my name)</ThemedText>
+      </TouchableOpacity>
+    )
+  }
+
+  // Determine if the next button should be disabled
+  const isNextButtonDisabled = () => {
+    if (isLoading) return true
+
+    if (currentStep === ProfileStep.NAME_DOB) {
+      // Disable if underage or if DOB is required but not provided
+      return isUnderage || (!stayAnonymous && !dateOfBirth)
+    }
+
+    if (currentStep === ProfileStep.USERNAME) {
+      // Disable if username is invalid
+      return !username || !!usernameError
+    }
+
+    return false
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <ScrollView 
-          contentContainerStyle={[
-            styles.container,
-            keyboardVisible && styles.keyboardVisibleContainer
-          ]}
+        <ScrollView
+          contentContainerStyle={[styles.container, keyboardVisible && styles.keyboardVisibleContainer]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -294,119 +456,166 @@ export default function ProfileScreen() {
           </ThemedText>
 
           <ThemedText style={styles.description}>
-            Please complete your profile information. This helps us personalize your experience and connect you with others.
+            Please complete your profile information. This helps us personalize your experience and connect you with
+            others.
           </ThemedText>
 
+          {renderStepIndicator()}
+
           <View style={styles.formContainer}>
-            {/* Username - Most prominent as required */}
-            <View style={styles.usernameContainer}>
-              <ThemedText style={styles.usernameLabel}>Username *</ThemedText>
-              <TextInput
-                style={[styles.input, usernameError && styles.inputError]}
-                value={username}
-                onChangeText={(text) => {
-                  setUsername(text);
-                  validateUsername(text);
-                }}
-                placeholder="Choose a unique username"
-                autoCapitalize="none"
-                returnKeyType="next"
-              />
-              {usernameError && (
-                <ThemedText style={styles.errorText}>{usernameError}</ThemedText>
-              )}
-            </View>
+            <Animated.View style={[styles.stepContainer, { transform: [{ translateX: slideAnim }] }]}>
+              {/* Step 1: Name and DOB */}
+              <View style={styles.step}>
+                <View style={styles.nameContainer}>
+                  <ThemedText style={styles.sectionTitle}>What's your name?</ThemedText>
 
-            {/* First Name and Last Name in a row */}
-            <View style={styles.nameRow}>
-              <View style={styles.halfInput}>
-                <ThemedText style={styles.label}>First Name</ThemedText>
-                <TextInput
-                  style={styles.input}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="First name"
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
+                  {!stayAnonymous && (
+                    <>
+                      <View style={styles.nameRow}>
+                        <View style={styles.halfInput}>
+                          <ThemedText style={styles.label}>First Name</ThemedText>
+                          <TextInput
+                            style={styles.input}
+                            value={firstName}
+                            onChangeText={setFirstName}
+                            placeholder="First name"
+                            autoCapitalize="words"
+                            returnKeyType="next"
+                          />
+                        </View>
+
+                        <View style={styles.halfInput}>
+                          <ThemedText style={styles.label}>Last Name</ThemedText>
+                          <TextInput
+                            style={styles.input}
+                            value={lastName}
+                            onChangeText={setLastName}
+                            placeholder="Last name"
+                            autoCapitalize="words"
+                            returnKeyType="next"
+                          />
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  {renderAnonymousToggle()}
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <ThemedText style={styles.sectionTitle}>When were you born?</ThemedText>
+                  <TouchableOpacity
+                    style={styles.dateInputContainer}
+                    onPress={() => {
+                      Keyboard.dismiss()
+                      setShowDatePicker(true)
+                    }}
+                  >
+                    <Text style={styles.dateInputText}>
+                      {dateOfBirth ? ProfileController.formatDate(dateOfBirth) : "Select your date of birth"}
+                    </Text>
+                    <Calendar size={20} color="#666" />
+                  </TouchableOpacity>
+                  {isUnderage && (
+                    <ThemedText style={styles.errorText}>You must be at least 18 years old to use this app</ThemedText>
+                  )}
+                  {renderDatePickerModal()}
+                </View>
               </View>
-              
-              <View style={styles.halfInput}>
-                <ThemedText style={styles.label}>Last Name</ThemedText>
-                <TextInput
-                  style={styles.input}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Last name"
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
+
+              {/* Step 2: Username */}
+              <View style={styles.step}>
+                <View style={styles.usernameContainer}>
+                  <ThemedText style={styles.sectionTitle}>Choose a username</ThemedText>
+                  <ThemedText style={styles.usernameDescription}>
+                    This is how others will see you in the community.
+                  </ThemedText>
+                  <TextInput
+                    style={[styles.input, usernameError && styles.inputError]}
+                    value={username}
+                    onChangeText={(text) => {
+                      setUsername(text)
+                      validateUsername(text)
+                    }}
+                    placeholder="Choose a unique username"
+                    autoCapitalize="none"
+                    returnKeyType="next"
+                  />
+                  {usernameError && <ThemedText style={styles.errorText}>{usernameError}</ThemedText>}
+                </View>
               </View>
-            </View>
 
-            {/* Date of Birth */}
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.label}>Date of Birth</ThemedText>
-              <TouchableOpacity 
-                style={styles.dateInputContainer}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text style={styles.dateInputText}>
-                  {dateOfBirth ? formatDate(dateOfBirth) : "Select your date of birth"}
-                </Text>
-                <Calendar size={20} color="#666" />
-              </TouchableOpacity>
-              {renderDatePickerModal()}
-            </View>
-
-            {/* Phone Number */}
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.label}>Phone Number</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                placeholder="Your phone number"
-                keyboardType="phone-pad"
-                returnKeyType="done"
-              />
-            </View>
+              {/* Step 3: Phone Number */}
+              <View style={styles.step}>
+                <View style={styles.phoneContainer}>
+                  <ThemedText style={styles.sectionTitle}>What's your phone number?</ThemedText>
+                  <ThemedText style={styles.phoneDescription}>
+                    We'll use this to help you connect with others.
+                  </ThemedText>
+                  <TextInput
+                    style={styles.input}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    placeholder="Your phone number"
+                    keyboardType="phone-pad"
+                    returnKeyType="done"
+                  />
+                </View>
+              </View>
+            </Animated.View>
           </View>
 
           {error && <ThemedText style={styles.errorText}>{error}</ThemedText>}
 
-          <Button
-            size="lg"
-            action="primary"
-            style={[styles.button, keyboardVisible && styles.keyboardVisibleButton]}
-            onPress={saveProfile}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text>Continue</Text>
+          <View style={styles.buttonContainer}>
+            {currentStep > 0 && (
+              <Button
+                size="lg"
+                action="secondary"
+                style={[styles.backButton]}
+                onPress={handlePrevStep}
+                disabled={isLoading}
+              >
+                <Text>Back</Text>
+              </Button>
             )}
-          </Button>
-          
+
+            <Button
+              size="lg"
+              action="primary"
+              style={[
+                styles.button,
+                currentStep > 0 ? styles.nextButton : styles.fullButton,
+                keyboardVisible && styles.keyboardVisibleButton,
+                isNextButtonDisabled() && styles.disabledButton,
+              ]}
+              onPress={handleNextStep}
+              disabled={isNextButtonDisabled()}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text>{currentStep === ProfileStep.PHONE_NUMBER ? "Finish" : "Continue"}</Text>
+              )}
+            </Button>
+          </View>
+
           {/* Extra space at the bottom to ensure scrollability */}
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 120 : 100, // Extra padding at the bottom
+    paddingBottom: Platform.OS === "ios" ? 120 : 100, // Extra padding at the bottom
   },
   keyboardVisibleContainer: {
-    paddingBottom: Platform.OS === 'ios' ? 200 : 160, // Even more padding when keyboard is visible
+    paddingBottom: Platform.OS === "ios" ? 200 : 160, // Even more padding when keyboard is visible
   },
   title: {
     marginBottom: 8,
@@ -414,26 +623,59 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   description: {
-    marginBottom: 24,
+    marginBottom: 16,
     lineHeight: 22,
     color: "#666",
   },
+  stepIndicator: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#CCCCCC",
+    marginHorizontal: 4,
+  },
+  activeStepDot: {
+    backgroundColor: "#007AFF",
+    width: 24,
+  },
   formContainer: {
     marginBottom: 16,
+    overflow: "hidden",
+  },
+  stepContainer: {
+    flexDirection: "row",
+    width: "300%", // 3 steps side by side
+  },
+  step: {
+    width: "33.333%", // Each step takes 1/3 of the container
+    paddingRight: 16,
+  },
+  nameContainer: {
+    marginBottom: 24,
   },
   usernameContainer: {
     marginBottom: 24,
-    backgroundColor: "#F8F8F8",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
-  usernameLabel: {
-    marginBottom: 8,
+  phoneContainer: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "700",
-    fontSize: 16,
-    color: "#333",
+    marginBottom: 12,
+  },
+  usernameDescription: {
+    marginBottom: 12,
+    color: "#666",
+  },
+  phoneDescription: {
+    marginBottom: 12,
+    color: "#666",
   },
   nameRow: {
     flexDirection: "row",
@@ -466,8 +708,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
   },
-  button: {
+  buttonContainer: {
+    flexDirection: "row",
     marginTop: 24,
+  },
+  button: {
+    flex: 1,
+  },
+  backButton: {
+    marginRight: 8,
+    flex: 0.4,
+  },
+  nextButton: {
+    flex: 0.6,
+  },
+  fullButton: {
+    flex: 1,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   keyboardVisibleButton: {
     marginTop: 16,
@@ -546,7 +805,32 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
   },
+  anonymousToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  toggleBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toggleBoxActive: {
+    backgroundColor: "#007AFF",
+  },
+  toggleText: {
+    fontSize: 14,
+    color: "#333",
+  },
   bottomPadding: {
     height: 40, // Extra space at the bottom
   },
-});
+})
+
+
