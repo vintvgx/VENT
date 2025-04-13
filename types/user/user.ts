@@ -49,6 +49,7 @@ export enum UserType {
   
   /**
    * Represents a user's profile preferences, interests, and experiences.
+   * * Note: Property names use snake_case to match the database schema
    */
   export type ProfileModel = {
     id: string;

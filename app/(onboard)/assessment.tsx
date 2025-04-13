@@ -40,8 +40,6 @@ const AssessmentScreen = () => {
   const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
   
   useEffect(() => {
-    console.log("User profile:", profile)
-    console.log("Role", profile?.role)
     // Combine appropriate questions based on user type
     let assessmentQuestions: AssessmentQuestion[] = [];
     

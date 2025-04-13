@@ -216,7 +216,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return userProfile as ProfileModel;
     } catch (e) {
       console.error("Error fetching user profile:", e);
-      return null;
+      setAuthState({
+        session: null,
+        user: null,
+        profile: null,
+        isLoading: false,
+        isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
+      });
+      return null
     }
   };
 
