@@ -15,16 +15,30 @@ import "react-native-reanimated";
 import { GluestackUIProvider } from "../components/ui/gluestack-ui-provider";
 import LoadingScreen from "./components/LoadingScreen";
 import { ToastProvider } from "@gluestack-ui/toast";
+import { useShowToast } from "@/components/ui/toast/useToast";
+import { ToastService } from "@/services/ToastService";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const showToast = useShowToast();
+
   const colorScheme = useColorScheme();
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  
+  useEffect(() => {
+    // Register the toast callback when component mounts
+    ToastService.register(showToast);
+    
+    // Clean up when component unmounts
+    return () => {
+      ToastService.unregister();
+    };
+  }, [showToast]);
 
   useEffect(() => {
     if (fontsLoaded) {

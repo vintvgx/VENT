@@ -25,10 +25,13 @@ import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
 import { ThemedView } from "@/components/ThemedView";
 import { UserType } from "@/types/user/user";
 import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";
+import { AssessmentController } from '../../controller/onboard/AssessmentController';
 
 const AssessmentScreen = () => {
-  const router = useRouter();
   const { authState: {user, profile}, setOnboardingStep, updateUserProfile } = useAuth();
+
+  const router = useRouter();
+
   const [assessment, setAssessment] = useState<AssessmentState>({
     answers: {},
     currentQuestionIndex: 0,
@@ -57,7 +60,7 @@ const AssessmentScreen = () => {
 
   const currentQuestion = questions[assessment.currentQuestionIndex];
 
-  const handleAnswer = (questionId: string, answer: any) => {
+  const handleAnswer = async (questionId: string, answer: any) => {
     setAssessment(prev => ({
       ...prev,
       answers: {
@@ -65,9 +68,13 @@ const AssessmentScreen = () => {
         [questionId]: answer
       }
     }));
+
+    // Save current answer to Supabase 
+    await AssessmentController.saveCurrentAnswer(questionId, answer, user, questions);
   };
 
   const goToNextQuestion = () => {
+    // check if assessment current index is at the last question
     if (assessment.currentQuestionIndex < questions.length - 1) {
       setAssessment(prev => ({
         ...prev,
@@ -96,12 +103,6 @@ const AssessmentScreen = () => {
 
   const saveAssessmentData = async () => {
     try {
-      // Format the assessment data according to your user model
-      const assessmentData = formatAssessmentData(assessment.answers);
-      
-      // TODO update function of uploading assessment data (include in profile object or create table ? )
-      // Update user profile with assessment data
-      // await updateUserProfile();
       
       // Mark onboarding as completed
       await setOnboardingStep(OnboardingStep.COMPLETED);

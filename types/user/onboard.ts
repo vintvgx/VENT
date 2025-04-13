@@ -7,6 +7,37 @@ export enum QuestionType {
     SCALE = "scale",
     CHECKBOX = "checkbox"
   }
+
+  export interface AssessmentResponse {
+    id: string;
+    user_id: string;
+    question_id: string;
+    response: {
+      text?: string;
+      value?: string;
+      values?: string[];
+    };
+    assessment_version: number;
+    created_at: string;
+    updated_at: string;
+  }
+
+  export interface FormattedAssessmentData {
+    // Host-specific data
+    yearsOfExperience?: string;
+    specialties?: string[];
+    supportStyle?: string;
+    publicBio?: string;
+    
+    // Client-specific data
+    supportNeeds?: string[];
+    goals?: string;
+    previousSupport?: string;
+    preferredHostStyle?: string;
+    
+    // Common data
+    communicationPreference?: string;
+  }
   
   // Define a generic question interface
   export interface AssessmentQuestion {
