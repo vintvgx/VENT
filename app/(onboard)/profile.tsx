@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -15,189 +15,212 @@ import {
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Animated,
-} from "react-native"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { Button } from "@/components/ui/button"
-import { ThemedText } from "@/components/ThemedText"
-import { supabase } from "@/lib/supabase/supabase"
-import { useAuth } from "@/context/auth/AuthContext"
-import { OnboardingStep } from "@/types/auth"
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast"
-import { Calendar, Check } from "lucide-react-native"
-import React from "react"
-import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile"
-import { ProfileController } from '@/controller/onboard/ProfileController';
+  Dimensions,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Button } from "@/components/ui/button";
+import { ThemedText } from "@/components/ThemedText";
+import { supabase } from "@/lib/supabase/supabase";
+import { useAuth } from "@/context/auth/AuthContext";
+import { OnboardingStep } from "@/types/auth";
+import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
+import { Calendar, Check } from "lucide-react-native";
+import React from "react";
+import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile";
+import { ProfileController } from "@/controller/onboard/ProfileController";
 
 export default function ProfileScreen() {
-  const showToast = useShowToast()
+  const showToast = useShowToast();
 
   const {
     authState: { user },
     setOnboardingStep,
-  } = useAuth()
+    updateUserProfile,
+  } = useAuth();
 
   // Form fields
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [username, setUsername] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null)
-  const [stayAnonymous, setStayAnonymous] = useState(false)
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [stayAnonymous, setStayAnonymous] = useState(false);
 
   // UI state
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [usernameError, setUsernameError] = useState<string | null>(null)
-  const [keyboardVisible, setKeyboardVisible] = useState(false)
-  const [isUnderage, setIsUnderage] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isUnderage, setIsUnderage] = useState(false);
 
   // Step management
-  const [currentStep, setCurrentStep] = useState<ProfileStep>(ProfileStep.NAME_DOB)
-  const slideAnim = useRef(new Animated.Value(0)).current
+  const [currentStep, setCurrentStep] = useState<ProfileStep>(
+    ProfileStep.NAME_DOB
+  );
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Date picker state
-  const [pickerYear, setPickerYear] = useState(dateOfBirth?.getFullYear() || new Date().getFullYear() - 20)
-  const [pickerMonth, setPickerMonth] = useState(dateOfBirth?.getMonth() || 0)
-  const [pickerDay, setPickerDay] = useState(dateOfBirth?.getDate() || 1)
+  const [pickerYear, setPickerYear] = useState(
+    dateOfBirth?.getFullYear() || new Date().getFullYear() - 20
+  );
+  const [pickerMonth, setPickerMonth] = useState(dateOfBirth?.getMonth() || 0);
+  const [pickerDay, setPickerDay] = useState(dateOfBirth?.getDate() || 1);
 
   // Load saved data on initial render
   useEffect(() => {
-    loadSavedData()
-  }, [])
+    loadSavedData();
+  }, []);
 
   // Keyboard listeners
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
-      setKeyboardVisible(true)
-    })
-    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
-      setKeyboardVisible(false)
-    })
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
 
     return () => {
-      keyboardDidHideListener.remove()
-      keyboardDidShowListener.remove()
-    }
-  }, [])
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   // Populate fields with existing data if available
   useEffect(() => {
     if (user?.user_metadata) {
-      const metadata = user.user_metadata
-      if (metadata.firstName) setFirstName(metadata.firstName)
-      if (metadata.lastName) setLastName(metadata.lastName)
-      if (metadata.username) setUsername(metadata.username)
-      if (metadata.phoneNumber) setPhoneNumber(metadata.phoneNumber)
+      const metadata = user.user_metadata;
+      if (metadata.firstName) setFirstName(metadata.firstName);
+      if (metadata.lastName) setLastName(metadata.lastName);
+      if (metadata.username) setUsername(metadata.username);
+      if (metadata.phoneNumber) setPhoneNumber(metadata.phoneNumber);
       if (metadata.createdAt) {
         try {
-          const dob = new Date(metadata.createdAt)
-          setDateOfBirth(dob)
-          setPickerYear(dob.getFullYear())
-          setPickerMonth(dob.getMonth())
-          setPickerDay(dob.getDate())
-          ProfileController.checkAge(dob)
+          const dob = new Date(metadata.createdAt);
+          setDateOfBirth(dob);
+          setPickerYear(dob.getFullYear());
+          setPickerMonth(dob.getMonth());
+          setPickerDay(dob.getDate());
+          ProfileController.checkAge(dob);
         } catch (e) {
-          console.error("Invalid date format:", e)
+          console.error("Invalid date format:", e);
         }
       }
     }
-  }, [user])
-
+  }, [user]);
 
   // Load saved data from AsyncStorage
   const loadSavedData = async () => {
     try {
       // Get all saved values
-      const [savedStep, savedFirstName, savedLastName, savedDOB, savedAnonymous, savedUsername, savedPhone] =
-        await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.PROFILE_STEP),
-          AsyncStorage.getItem(STORAGE_KEYS.FIRST_NAME),
-          AsyncStorage.getItem(STORAGE_KEYS.LAST_NAME),
-          AsyncStorage.getItem(STORAGE_KEYS.DATE_OF_BIRTH),
-          AsyncStorage.getItem(STORAGE_KEYS.STAY_ANONYMOUS),
-          AsyncStorage.getItem(STORAGE_KEYS.USERNAME),
-          AsyncStorage.getItem(STORAGE_KEYS.PHONE_NUMBER),
-        ])
+      const [
+        savedStep,
+        savedFirstName,
+        savedLastName,
+        savedDOB,
+        savedAnonymous,
+        savedUsername,
+        savedPhone,
+      ] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.PROFILE_STEP),
+        AsyncStorage.getItem(STORAGE_KEYS.FIRST_NAME),
+        AsyncStorage.getItem(STORAGE_KEYS.LAST_NAME),
+        AsyncStorage.getItem(STORAGE_KEYS.DATE_OF_BIRTH),
+        AsyncStorage.getItem(STORAGE_KEYS.STAY_ANONYMOUS),
+        AsyncStorage.getItem(STORAGE_KEYS.USERNAME),
+        AsyncStorage.getItem(STORAGE_KEYS.PHONE_NUMBER),
+      ]);
 
       // Set values if they exist
-      if (savedFirstName) setFirstName(savedFirstName)
-      if (savedLastName) setLastName(savedLastName)
-      if (savedAnonymous) setStayAnonymous(savedAnonymous === "true")
-      if (savedUsername) setUsername(savedUsername)
-      if (savedPhone) setPhoneNumber(savedPhone)
+      if (savedFirstName) setFirstName(savedFirstName);
+      if (savedLastName) setLastName(savedLastName);
+      if (savedAnonymous) setStayAnonymous(savedAnonymous === "true");
+      if (savedUsername) setUsername(savedUsername);
+      if (savedPhone) setPhoneNumber(savedPhone);
 
       // Handle date of birth
       if (savedDOB) {
-        const dob = new Date(savedDOB)
-        setDateOfBirth(dob)
-        setPickerYear(dob.getFullYear())
-        setPickerMonth(dob.getMonth())
-        setPickerDay(dob.getDate())
-        ProfileController.checkAge(dob)
+        const dob = new Date(savedDOB);
+        setDateOfBirth(dob);
+        setPickerYear(dob.getFullYear());
+        setPickerMonth(dob.getMonth());
+        setPickerDay(dob.getDate());
+        ProfileController.checkAge(dob);
       }
 
       // Navigate to the appropriate step
       if (savedStep) {
-        const step = Number.parseInt(savedStep)
+        const step = Number.parseInt(savedStep);
         if (!isNaN(step)) {
           // Determine which step to navigate to based on completed data
-          let targetStep = step as ProfileStep
+          let targetStep = step as ProfileStep;
 
           // If we have name and DOB but no username, go to username step
           if (targetStep >= ProfileStep.USERNAME && !savedUsername) {
-            targetStep = ProfileStep.USERNAME
+            targetStep = ProfileStep.USERNAME;
           }
           // If we have username but no phone, go to phone step
           else if (targetStep >= ProfileStep.PHONE_NUMBER && !savedPhone) {
-            targetStep = ProfileStep.PHONE_NUMBER
+            targetStep = ProfileStep.PHONE_NUMBER;
           }
 
-          animateToStep(targetStep)
+          animateToStep(targetStep);
         }
       }
     } catch (error) {
-      console.error("Error loading saved data:", error)
+      console.error("Error loading saved data:", error);
     }
-  }
+  };
 
   // Animate between steps
   const animateToStep = (step: ProfileStep) => {
     Animated.timing(slideAnim, {
-      toValue: -step * 100, // Slide left based on step
+      toValue: -step * Dimensions.get("screen").width, // Slide left based on step
       duration: 300,
       useNativeDriver: true,
-    }).start()
-    setCurrentStep(step)
-  }
+    }).start();
+    setCurrentStep(step);
+  };
 
   const validateUsername = (value: string) => {
     if (!value.trim()) {
-      setUsernameError("Username is required")
-      return false
+      setUsernameError("Username is required");
+      return false;
     }
 
     // Add additional validation rules if needed
     // For example: only alphanumeric characters and underscores
     if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores")
-      return false
+      setUsernameError(
+        "Username can only contain letters, numbers, and underscores"
+      );
+      return false;
     }
 
-    setUsernameError(null)
-    return true
-  }
+    setUsernameError(null);
+    return true;
+  };
 
   const handleDateSelect = (date: Date) => {
-    setDateOfBirth(date)
-    setShowDatePicker(false)
-    ProfileController.checkAge(date)
-  }
+    setDateOfBirth(date);
+    setShowDatePicker(false);
+    ProfileController.checkAge(date);
+  };
 
   // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetimepicker
   const renderDatePickerModal = () => {
     // This is a simplified date picker. In a production app, you would use a proper date picker component
-    const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i)
+    const years = Array.from(
+      { length: 100 },
+      (_, i) => new Date().getFullYear() - i
+    );
     const months = [
       "January",
       "February",
@@ -211,24 +234,25 @@ export default function ProfileScreen() {
       "October",
       "November",
       "December",
-    ]
-    const days = Array.from({ length: 31 }, (_, i) => i + 1)
+    ];
+    const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
     const confirmDate = () => {
-      const newDate = new Date(pickerYear, pickerMonth, pickerDay)
-      handleDateSelect(newDate)
-    }
+      const newDate = new Date(pickerYear, pickerMonth, pickerDay);
+      handleDateSelect(newDate);
+    };
 
     return (
       <Modal
         visible={showDatePicker}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowDatePicker(false)}
-      >
+        onRequestClose={() => setShowDatePicker(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.datePickerContainer}>
-            <ThemedText style={styles.datePickerTitle}>Select Date of Birth</ThemedText>
+            <ThemedText style={styles.datePickerTitle}>
+              Select Date of Birth
+            </ThemedText>
 
             <View style={styles.datePickerControls}>
               {/* Month Picker */}
@@ -238,10 +262,17 @@ export default function ProfileScreen() {
                   {months.map((monthName, index) => (
                     <TouchableOpacity
                       key={monthName}
-                      style={[styles.datePickerItem, pickerMonth === index && styles.datePickerItemSelected]}
-                      onPress={() => setPickerMonth(index)}
-                    >
-                      <ThemedText style={pickerMonth === index ? styles.datePickerTextSelected : {}}>
+                      style={[
+                        styles.datePickerItem,
+                        pickerMonth === index && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setPickerMonth(index)}>
+                      <ThemedText
+                        style={
+                          pickerMonth === index
+                            ? styles.datePickerTextSelected
+                            : {}
+                        }>
                         {monthName}
                       </ThemedText>
                     </TouchableOpacity>
@@ -256,10 +287,17 @@ export default function ProfileScreen() {
                   {days.map((d) => (
                     <TouchableOpacity
                       key={d}
-                      style={[styles.datePickerItem, pickerDay === d && styles.datePickerItemSelected]}
-                      onPress={() => setPickerDay(d)}
-                    >
-                      <ThemedText style={pickerDay === d ? styles.datePickerTextSelected : {}}>{d}</ThemedText>
+                      style={[
+                        styles.datePickerItem,
+                        pickerDay === d && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setPickerDay(d)}>
+                      <ThemedText
+                        style={
+                          pickerDay === d ? styles.datePickerTextSelected : {}
+                        }>
+                        {d}
+                      </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -272,10 +310,17 @@ export default function ProfileScreen() {
                   {years.map((y) => (
                     <TouchableOpacity
                       key={y}
-                      style={[styles.datePickerItem, pickerYear === y && styles.datePickerItemSelected]}
-                      onPress={() => setPickerYear(y)}
-                    >
-                      <ThemedText style={pickerYear === y ? styles.datePickerTextSelected : {}}>{y}</ThemedText>
+                      style={[
+                        styles.datePickerItem,
+                        pickerYear === y && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setPickerYear(y)}>
+                      <ThemedText
+                        style={
+                          pickerYear === y ? styles.datePickerTextSelected : {}
+                        }>
+                        {y}
+                      </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -287,193 +332,245 @@ export default function ProfileScreen() {
                 size="sm"
                 action="secondary"
                 onPress={() => setShowDatePicker(false)}
-                style={styles.datePickerButton}
-              >
+                style={styles.datePickerButton}>
                 <Text>Cancel</Text>
               </Button>
-              <Button size="sm" action="primary" onPress={confirmDate} style={styles.datePickerButton}>
+              <Button
+                size="sm"
+                action="primary"
+                onPress={confirmDate}
+                style={styles.datePickerButton}>
                 <Text>Confirm</Text>
               </Button>
             </View>
           </View>
         </View>
       </Modal>
-    )
-  }
+    );
+  };
 
   const handleNextStep = async () => {
     if (currentStep === ProfileStep.NAME_DOB) {
       // Validate DOB is selected
       if (!dateOfBirth && !stayAnonymous) {
-        showToast(TOAST.ERROR, "Please select your date of birth")
-        return
+        showToast(TOAST.ERROR, "Please select your date of birth");
+        return;
       }
 
       // Check age if DOB is provided
       if (dateOfBirth && !ProfileController.checkAge(dateOfBirth)) {
-        showToast(TOAST.INFO, "Users must be over the age of 18 to use VENT :(")
-        return // Don't proceed if underage
+        showToast(
+          TOAST.INFO,
+          "Users must be over the age of 18 to use VENT :("
+        );
+        return; // Don't proceed if underage
       }
 
       // Save progress and move to next step
       await ProfileController.saveToStorage(ProfileStep.NAME_DOB, {
-        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
-      })
+        firstName,
+        lastName,
+        dateOfBirth,
+        stayAnonymous,
+        username,
+        phoneNumber,
+      });
 
-      animateToStep(ProfileStep.USERNAME)
+      animateToStep(ProfileStep.USERNAME);
     } else if (currentStep === ProfileStep.USERNAME) {
       // Validate username
       if (!validateUsername(username)) {
-        return
+        return;
       }
 
       // Save progress and move to next step
       await ProfileController.saveToStorage(ProfileStep.USERNAME, {
-        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
-      })
-      animateToStep(ProfileStep.PHONE_NUMBER)
+        firstName,
+        lastName,
+        dateOfBirth,
+        stayAnonymous,
+        username,
+        phoneNumber,
+      });
+      animateToStep(ProfileStep.PHONE_NUMBER);
     } else {
       // Final step - save profile
       await ProfileController.saveToStorage(ProfileStep.PHONE_NUMBER, {
-        firstName, lastName, dateOfBirth, stayAnonymous, username, phoneNumber
-      })
+        firstName,
+        lastName,
+        dateOfBirth,
+        stayAnonymous,
+        username,
+        phoneNumber,
+      });
 
-      saveProfile()
+      saveProfile();
     }
-  }
+  };
 
   const handlePrevStep = () => {
     if (currentStep === ProfileStep.USERNAME) {
-      animateToStep(ProfileStep.NAME_DOB)
+      animateToStep(ProfileStep.NAME_DOB);
     } else if (currentStep === ProfileStep.PHONE_NUMBER) {
-      animateToStep(ProfileStep.USERNAME)
+      animateToStep(ProfileStep.USERNAME);
     }
-  }
+  };
 
   const saveProfile = async () => {
     // Dismiss keyboard
-    Keyboard.dismiss()
+    Keyboard.dismiss();
 
     // Validate username as it's required
     if (!validateUsername(username)) {
-      animateToStep(ProfileStep.USERNAME)
-      return
+      animateToStep(ProfileStep.USERNAME);
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      if (!user) throw new Error("User not authenticated")
+      if (!user) throw new Error("User not authenticated");
+
+      console.log("Date of birth", dateOfBirth);
 
       // Create profile in Supabase
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
-        firstName: stayAnonymous ? "" : firstName.trim(),
-        lastName: stayAnonymous ? "" : lastName.trim(),
+        first_name: stayAnonymous ? "" : firstName.trim(),
+        last_name: stayAnonymous ? "" : lastName.trim(),
         username: username.trim(),
-        phoneNumber: phoneNumber.trim(),
-        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
-        isAnonymous: stayAnonymous,
+        phone_number: phoneNumber.trim(),
+        dob: dateOfBirth ? dateOfBirth.toISOString() : null,
+        is_anon: stayAnonymous,
         updated_at: new Date(),
-      })
+      });
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      } else {
+        await updateUserProfile();
+      }
 
       try {
         // Clear saved progress data since onboarding is complete
-        await Promise.all(Object.values(STORAGE_KEYS).map((key) => AsyncStorage.removeItem(key)))
+        await Promise.all(
+          Object.values(STORAGE_KEYS).map((key) => AsyncStorage.removeItem(key))
+        );
 
         // Move to next step
-        await setOnboardingStep(OnboardingStep.ROLE)
+        await setOnboardingStep(OnboardingStep.ROLE);
       } catch (stepError: unknown) {
-        console.error("Error updating onboarding step:", stepError)
-        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
+        console.error("Error updating onboarding step:", stepError);
+        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`);
       }
     } catch (error) {
-      console.error("Error saving profile:", error)
-      setError("Failed to save profile. Please try again.")
-      showToast(TOAST.ERROR, "Failed to save profile. Please try again.")
+      console.error("Error saving profile:", error);
+      setError("Failed to save profile. Please try again.");
+      showToast(TOAST.ERROR, "Failed to save profile. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Step progress indicator
   const renderStepIndicator = () => {
     return (
       <View style={styles.stepIndicator}>
         {[0, 1, 2].map((step) => (
-          <View key={step} style={[styles.stepDot, currentStep === step ? styles.activeStepDot : {}]} />
+          <View
+            key={step}
+            style={[
+              styles.stepDot,
+              currentStep === step ? styles.activeStepDot : {},
+            ]}
+          />
         ))}
       </View>
-    )
-  }
+    );
+  };
 
   // Toggle for anonymous mode
   const renderAnonymousToggle = () => {
     return (
-      <TouchableOpacity style={styles.anonymousToggle} onPress={() => setStayAnonymous(!stayAnonymous)}>
-        <View style={[styles.toggleBox, stayAnonymous ? styles.toggleBoxActive : {}]}>
+      <TouchableOpacity
+        style={styles.anonymousToggle}
+        onPress={() => setStayAnonymous(!stayAnonymous)}>
+        <View
+          style={[
+            styles.toggleBox,
+            stayAnonymous ? styles.toggleBoxActive : {},
+          ]}>
           {stayAnonymous && <Check size={16} color="#FFFFFF" />}
         </View>
-        <ThemedText style={styles.toggleText}>Stay anonymous (hide my name)</ThemedText>
+        <ThemedText style={styles.toggleText}>
+          Stay anonymous (hide my name)
+        </ThemedText>
       </TouchableOpacity>
-    )
-  }
+    );
+  };
 
   // Determine if the next button should be disabled
   const isNextButtonDisabled = () => {
-    if (isLoading) return true
+    if (isLoading) return true;
 
     if (currentStep === ProfileStep.NAME_DOB) {
       // Disable if underage or if DOB is required but not provided
-      return isUnderage || (!stayAnonymous && !dateOfBirth)
+      return isUnderage || (!stayAnonymous && !dateOfBirth);
     }
 
     if (currentStep === ProfileStep.USERNAME) {
       // Disable if username is invalid
-      return !username || !!usernameError
+      return !username || !!usernameError;
     }
 
-    return false
-  }
+    return false;
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}>
         <ScrollView
-          contentContainerStyle={[styles.container, keyboardVisible && styles.keyboardVisibleContainer]}
+          contentContainerStyle={[
+            styles.container,
+            keyboardVisible && styles.keyboardVisibleContainer,
+          ]}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <ThemedText type="subtitle" style={styles.title}>
             Set Up Your Profile
           </ThemedText>
 
           <ThemedText style={styles.description}>
-            Please complete your profile information. This helps us personalize your experience and connect you with
-            others.
+            Please complete your profile information. This helps us personalize
+            your experience and connect you with others.
           </ThemedText>
 
           {renderStepIndicator()}
 
           <View style={styles.formContainer}>
-            <Animated.View style={[styles.stepContainer, { transform: [{ translateX: slideAnim }] }]}>
+            <Animated.View
+              style={[
+                styles.stepContainer,
+                { transform: [{ translateX: slideAnim }] },
+              ]}>
               {/* Step 1: Name and DOB */}
               <View style={styles.step}>
                 <View style={styles.nameContainer}>
-                  <ThemedText style={styles.sectionTitle}>What's your name?</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>
+                    What's your name?
+                  </ThemedText>
 
                   {!stayAnonymous && (
                     <>
                       <View style={styles.nameRow}>
                         <View style={styles.halfInput}>
-                          <ThemedText style={styles.label}>First Name</ThemedText>
+                          <ThemedText style={styles.label}>
+                            First Name
+                          </ThemedText>
                           <TextInput
                             style={styles.input}
                             value={firstName}
@@ -485,7 +582,9 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={styles.halfInput}>
-                          <ThemedText style={styles.label}>Last Name</ThemedText>
+                          <ThemedText style={styles.label}>
+                            Last Name
+                          </ThemedText>
                           <TextInput
                             style={styles.input}
                             value={lastName}
@@ -503,21 +602,26 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <ThemedText style={styles.sectionTitle}>When were you born?</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>
+                    When were you born?
+                  </ThemedText>
                   <TouchableOpacity
                     style={styles.dateInputContainer}
                     onPress={() => {
-                      Keyboard.dismiss()
-                      setShowDatePicker(true)
-                    }}
-                  >
+                      Keyboard.dismiss();
+                      setShowDatePicker(true);
+                    }}>
                     <Text style={styles.dateInputText}>
-                      {dateOfBirth ? ProfileController.formatDate(dateOfBirth) : "Select your date of birth"}
+                      {dateOfBirth
+                        ? ProfileController.formatDate(dateOfBirth)
+                        : "Select your date of birth"}
                     </Text>
                     <Calendar size={20} color="#666" />
                   </TouchableOpacity>
                   {isUnderage && (
-                    <ThemedText style={styles.errorText}>You must be at least 18 years old to use this app</ThemedText>
+                    <ThemedText style={styles.errorText}>
+                      You must be at least 18 years old to use this app
+                    </ThemedText>
                   )}
                   {renderDatePickerModal()}
                 </View>
@@ -526,7 +630,9 @@ export default function ProfileScreen() {
               {/* Step 2: Username */}
               <View style={styles.step}>
                 <View style={styles.usernameContainer}>
-                  <ThemedText style={styles.sectionTitle}>Choose a username</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>
+                    Choose a username
+                  </ThemedText>
                   <ThemedText style={styles.usernameDescription}>
                     This is how others will see you in the community.
                   </ThemedText>
@@ -534,21 +640,27 @@ export default function ProfileScreen() {
                     style={[styles.input, usernameError && styles.inputError]}
                     value={username}
                     onChangeText={(text) => {
-                      setUsername(text)
-                      validateUsername(text)
+                      setUsername(text);
+                      validateUsername(text);
                     }}
                     placeholder="Choose a unique username"
                     autoCapitalize="none"
                     returnKeyType="next"
                   />
-                  {usernameError && <ThemedText style={styles.errorText}>{usernameError}</ThemedText>}
+                  {usernameError && (
+                    <ThemedText style={styles.errorText}>
+                      {usernameError}
+                    </ThemedText>
+                  )}
                 </View>
               </View>
 
               {/* Step 3: Phone Number */}
               <View style={styles.step}>
                 <View style={styles.phoneContainer}>
-                  <ThemedText style={styles.sectionTitle}>What's your phone number?</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>
+                    What's your phone number?
+                  </ThemedText>
                   <ThemedText style={styles.phoneDescription}>
                     We'll use this to help you connect with others.
                   </ThemedText>
@@ -574,8 +686,7 @@ export default function ProfileScreen() {
                 action="secondary"
                 style={[styles.backButton]}
                 onPress={handlePrevStep}
-                disabled={isLoading}
-              >
+                disabled={isLoading}>
                 <Text>Back</Text>
               </Button>
             )}
@@ -590,12 +701,15 @@ export default function ProfileScreen() {
                 isNextButtonDisabled() && styles.disabledButton,
               ]}
               onPress={handleNextStep}
-              disabled={isNextButtonDisabled()}
-            >
+              disabled={isNextButtonDisabled()}>
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text>{currentStep === ProfileStep.PHONE_NUMBER ? "Finish" : "Continue"}</Text>
+                <Text>
+                  {currentStep === ProfileStep.PHONE_NUMBER
+                    ? "Finish"
+                    : "Continue"}
+                </Text>
               )}
             </Button>
           </View>
@@ -605,7 +719,7 @@ export default function ProfileScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -831,6 +945,4 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 40, // Extra space at the bottom
   },
-})
-
-
+});

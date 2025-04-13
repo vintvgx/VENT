@@ -1,5 +1,5 @@
 // app/(onboard)/assessment.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,290 +7,283 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Text,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ThemedText";
 import { supabase } from "@/lib/supabase/supabase";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { useAuth } from "@/context/auth/AuthContext";
 import { OnboardingStep } from "@/types/auth";
 import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
+import TextQuestion from "../components/assessment/TextQuestion";
+import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboard";
+import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuestion";
+import ScaleQuestion from "../components/assessment/ScaleQuestion";
+import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
+import { ThemedView } from "@/components/ThemedView";
+import { UserType } from "@/types/user/user";
+import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";
 
-// Sample assessment questions
-const ASSESSMENT_QUESTIONS = [
-  {
-    id: "interests",
-    question: "What topics are you interested in discussing?",
-    options: [
-      "Mental Health",
-      "Physical Health",
-      "Life Experiences",
-      "Career",
-      "Relationships",
-      "Hobbies",
-    ],
-    multiSelect: true,
-  },
-  {
-    id: "support_type",
-    question: "What type of support are you looking for?",
-    options: [
-      "Someone to listen",
-      "Advice from others",
-      "Sharing my experiences",
-      "Learning from others",
-    ],
-    multiSelect: true,
-  },
-  {
-    id: "comfort_level",
-    question: "How comfortable are you with sharing personal experiences?",
-    options: [
-      "Very comfortable",
-      "Somewhat comfortable",
-      "Neutral",
-      "Somewhat uncomfortable",
-      "Very uncomfortable",
-    ],
-    multiSelect: false,
-  },
-];
+const AssessmentScreen = () => {
+  const router = useRouter();
+  const { authState: {user, profile}, setOnboardingStep, updateUserProfile } = useAuth();
+  const [assessment, setAssessment] = useState<AssessmentState>({
+    answers: {},
+    currentQuestionIndex: 0,
+    isComplete: false
+  });
 
-export default function AssessmentScreen() {
-  const showToast = useShowToast();
+  // Determine which questions to show based on user type
+  const role = profile?.role;
+  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
+  
+  useEffect(() => {
+    console.log("User profile:", profile)
+    console.log("Role", profile?.role)
+    // Combine appropriate questions based on user type
+    let assessmentQuestions: AssessmentQuestion[] = [];
+    
+    if (role === UserType.HOST) {
+      assessmentQuestions = [...HOST_QUESTIONS];
+    } else if (role === UserType.CLIENT) {
+      assessmentQuestions = [...CLIENT_QUESTIONS];
+    }
+    
+    // Add common questions for all user types
+    assessmentQuestions = [...assessmentQuestions, ...COMMON_QUESTIONS];
+    
+    setQuestions(assessmentQuestions);
+  }, [role]);
 
-  const {
-    authState: { user },
-    setOnboardingStep,
-  } = useAuth();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const currentQuestion = ASSESSMENT_QUESTIONS[currentQuestionIndex];
+  const currentQuestion = questions[assessment.currentQuestionIndex];
 
-  const isOptionSelected = (option: string) => {
-    return answers[currentQuestion.id]?.includes(option) || false;
-  };
-
-  const toggleOption = (option: string) => {
-    setAnswers((prev) => {
-      const currentSelections = prev[currentQuestion.id] || [];
-
-      if (currentQuestion.multiSelect) {
-        // For multi-select, toggle the selection
-        return {
-          ...prev,
-          [currentQuestion.id]: currentSelections.includes(option)
-            ? currentSelections.filter((item) => item !== option)
-            : [...currentSelections, option],
-        };
-      } else {
-        // For single-select, replace the selection
-        return {
-          ...prev,
-          [currentQuestion.id]: [option],
-        };
+  const handleAnswer = (questionId: string, answer: any) => {
+    setAssessment(prev => ({
+      ...prev,
+      answers: {
+        ...prev.answers,
+        [questionId]: answer
       }
-    });
+    }));
   };
 
-  const canProceed = () => {
-    // Check if current question has at least one answer
-    return answers[currentQuestion.id]?.length > 0;
-  };
-
-  const handleNext = () => {
-    if (currentQuestionIndex < ASSESSMENT_QUESTIONS.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+  const goToNextQuestion = () => {
+    if (assessment.currentQuestionIndex < questions.length - 1) {
+      setAssessment(prev => ({
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex + 1
+      }));
     } else {
-      completeAssessment();
+      // Assessment is complete
+      setAssessment(prev => ({
+        ...prev,
+        isComplete: true
+      }));
+      
+      // Save assessment data
+      saveAssessmentData();
     }
   };
 
-  const handleBack = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+  const goToPreviousQuestion = () => {
+    if (assessment.currentQuestionIndex > 0) {
+      setAssessment(prev => ({
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex - 1
+      }));
     }
   };
 
-  const completeAssessment = async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const saveAssessmentData = async () => {
     try {
-      if (!user) throw new Error("User not authenticated");
-
-      // Save assessment answers to Supabase
-      const { error } = await supabase.from("assessments").upsert({
-        user_id: user.id,
-        answers: answers,
-        completed: true,
-        completed_at: new Date(),
-      });
-
-      if (error) throw error;
-
-      try {
-        // Mark onboarding as complete
-        await setOnboardingStep(OnboardingStep.COMPLETED);
-      } catch (stepError: unknown) {
-        console.error("Error updating onboarding step:", stepError);
-        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
-      }
-
-      // Navigate to home screen
-      router.replace("/(app)/home");
-    } catch (error: unknown) {
-      console.error("Error saving assessment:", error);
-      setError("Failed to save your responses. Please try again.");
-      showToast(TOAST.ERROR, "Failed to save your responses. Please try again.")
-    } finally {
-      setIsLoading(false);
+      // Format the assessment data according to your user model
+      const assessmentData = formatAssessmentData(assessment.answers);
+      
+      // TODO update function of uploading assessment data (include in profile object or create table ? )
+      // Update user profile with assessment data
+      // await updateUserProfile();
+      
+      // Mark onboarding as completed
+      await setOnboardingStep(OnboardingStep.COMPLETED);
+      
+      // Navigate to home/dashboard
+      router.replace('/(app)/home');
+    } catch (error) {
+      console.error('Error saving assessment data:', error);
+      // Handle error appropriately
     }
   };
 
-  const isLastQuestion =
-    currentQuestionIndex === ASSESSMENT_QUESTIONS.length - 1;
+  const formatAssessmentData = (answers: Record<string, any>) => {
+    // Transform answers into the format needed for your user profile
+    // This will vary based on your data model
+    
+    if (role === UserType.HOST) {
+      return {
+        profile: {
+          // Host-specific profile updates
+          yearsOfExperience: answers.host_experience,
+          specialties: answers.host_specialties,
+          supportStyle: answers.host_approach,
+          publicBio: answers.host_bio,
+          preferredCommunicationStyle: answers.communication_preference
+        }
+      };
+    } else {
+      return {
+        onboardSelections: {
+          // Client-specific profile updates
+          currentSupportNeeds: answers.client_needs,
+          shortTermGoals: [answers.client_goals],
+          previousSupport: [answers.client_experience],
+          preferredHostStyle: answers.client_style,
+          preferredCommunicationStyle: answers.communication_preference
+        }
+      };
+    }
+  };
+
+  // Render the appropriate question component based on question type
+  const renderQuestionComponent = () => {
+    if (!currentQuestion) return null;
+
+    const questionProps = {
+      question: currentQuestion,
+      value: assessment.answers[currentQuestion.id] || null,
+      onChange: (value: any) => handleAnswer(currentQuestion.id, value)
+    };
+
+    switch (currentQuestion.type) {
+      case QuestionType.TEXT:
+        return <TextQuestion {...questionProps} />;
+      case QuestionType.MULTIPLE_CHOICE:
+        return <MultipleChoiceQuestion {...questionProps} />;
+      case QuestionType.SCALE:
+        return <ScaleQuestion {...questionProps} />;
+      case QuestionType.CHECKBOX:
+        return <CheckboxQuestion {...questionProps} />;
+      default:
+        return null;
+    }
+  };
+
+  // If assessment is complete, show a summary or completion screen
+  if (assessment.isComplete) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText style={styles.title}>Assessment Complete!</ThemedText>
+        <ThemedText style={styles.text}>Thank you for completing your assessment.</ThemedText>
+        <Button
+          style={styles.button}
+          onPress={() => saveAssessmentData()}
+        >
+          <Text>Finish Onboarding</Text>
+        </Button>
+      </ThemedView>
+    );
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ThemedText type="subtitle" style={styles.title}>
-        Quick Assessment
-      </ThemedText>
-
-      <ThemedText style={styles.description}>
-        Help us understand your needs better so we can connect you with the
-        right community.
-      </ThemedText>
-
-      <View style={styles.questionContainer}>
-        <ThemedText style={styles.questionText}>
-          {currentQuestion.question}
-        </ThemedText>
-
-        <ThemedText style={styles.helperText}>
-          {currentQuestion.multiSelect
-            ? "Select all that apply"
-            : "Select one option"}
-        </ThemedText>
-
-        <View style={styles.optionsContainer}>
-          {currentQuestion.options.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.optionButton,
-                isOptionSelected(option) && styles.optionSelected,
-              ]}
-              onPress={() => toggleOption(option)}>
-              <ThemedText
-                style={[
-                  styles.optionText,
-                  isOptionSelected(option) && styles.optionTextSelected,
-                ]}>
-                {option}
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoidingContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView style={styles.scrollView}>
+        <ThemedView style={styles.container}>
+          {currentQuestion && (
+            <>
+              <ThemedText style={styles.title}>{currentQuestion.question}</ThemedText>
+              
+              {currentQuestion.description && (
+                <ThemedText style={styles.description}>{currentQuestion.description}</ThemedText>
+              )}
+              
+              <View style={styles.questionContainer}>
+                {renderQuestionComponent()}
+              </View>
+              
+              <View style={styles.navigationContainer}>
+                <Button
+                  variant="outline"
+                  style={[styles.navButton, assessment.currentQuestionIndex === 0 && styles.disabledButton]}
+                  disabled={assessment.currentQuestionIndex === 0}
+                  onPress={goToPreviousQuestion}
+                >
+                  <Text>Previous</Text>
+                </Button>
+                
+                <Button
+                  style={styles.navButton}
+                  disabled={currentQuestion.required && !assessment.answers[currentQuestion.id]}
+                  onPress={goToNextQuestion}
+                >
+                  <Text>
+                    {assessment.currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
+                  </Text>
+                </Button>
+              </View>
+              
+              <ThemedText style={styles.progress}>
+                Question {assessment.currentQuestionIndex + 1} of {questions.length}
               </ThemedText>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {error && <ThemedText style={styles.errorText}>{error}</ThemedText>}
-
-      <View style={styles.buttonsContainer}>
-        {currentQuestionIndex > 0 && (
-          <Button
-            variant="outline"
-            style={styles.backButton}
-            onPress={handleBack}
-            disabled={isLoading}>
-            <Text>Back</Text>
-          </Button>
-        )}
-
-        <Button
-          size="lg"
-          action="primary"
-          style={[
-            styles.nextButton,
-            currentQuestionIndex === 0 && styles.fullWidthButton,
-          ]}
-          onPress={handleNext}
-          disabled={!canProceed() || isLoading}>
-          {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text>{isLastQuestion ? "Complete" : "Next"}</Text>
+            </>
           )}
-        </Button>
-      </View>
-    </ScrollView>
+        </ThemedView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   container: {
-    flexGrow: 1,
+    flex: 1,
     padding: 20,
+    backgroundColor: '#F8F9FA',
   },
   title: {
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
   },
   description: {
-    marginBottom: 32,
-    lineHeight: 22,
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 24,
   },
   questionContainer: {
-    marginBottom: 32,
+    marginVertical: 20,
   },
-  questionText: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 40,
   },
-  helperText: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginBottom: 16,
+  navButton: {
+    flex: 0.45,
   },
-  optionsContainer: {
-    gap: 12,
+  disabledButton: {
+    opacity: 0.5,
   },
-  optionButton: {
-    borderWidth: 1,
-    borderColor: "#DDDDDD",
-    borderRadius: 8,
-    padding: 16,
+  progress: {
+    textAlign: 'center',
+    marginTop: 24,
+    color: '#666',
   },
-  optionSelected: {
-    borderColor: "#007AFF",
-    backgroundColor: "rgba(0, 122, 255, 0.05)",
+  button: {
+    marginTop: 24,
   },
-  optionText: {
+  text: {
     fontSize: 16,
-  },
-  optionTextSelected: {
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  errorText: {
-    color: "#FF3B30",
-    marginBottom: 16,
-  },
-  buttonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: "auto",
-  },
-  backButton: {
-    flex: 1,
-    marginRight: 8,
-  },
-  nextButton: {
-    flex: 2,
-  },
-  fullWidthButton: {
-    flex: 1,
-  },
+    marginVertical: 12,
+  }
 });
+
+export default AssessmentScreen;

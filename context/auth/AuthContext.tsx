@@ -1,11 +1,13 @@
 // In AuthContext.tsx
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState, OnboardingStep } from "@/types/auth";
+import { ProfileModel, UserModel } from "@/types/user/user";
 import {
   checkAssessmentStatus,
   checkProfileStatus,
   checkRoleStatus,
 } from "@/utils/auth/function";
+import { prettyJSON } from "@/utils/strings/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { router } from "expo-router";
@@ -14,8 +16,9 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 // Auth context with default values
 const AuthContext = createContext<AuthContextType>({
   authState: {
-    user: null,
     session: null,
+    user: null,
+    profile: null,
     isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
@@ -23,12 +26,14 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   refreshSession: async () => {},
   setOnboardingStep: async (state: OnboardingStep) => {},
+  updateUserProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
-    user: null,
     session: null,
+    user: null,
+    profile: null,
     isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
@@ -50,8 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setAuthState((prev) => ({
         ...prev,
-        user: null,
         session: null,
+        user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
       }));
@@ -150,9 +156,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Keep isLoading true until we check onboarding
       }));
 
+      // Fetch user profile
+      if (session.user?.id) {
+       await fetchUserProfile(session.user.id);
+     }
       //Update the state with the final loading state
       // The onboardingStep is already set by determineOnboardingStep
       await determineOnboardingStep(session.user.id);
+
 
       // Update the state
       setAuthState((prev) => ({
@@ -161,12 +172,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }));
     } else {
       setAuthState({
-        user: null,
         session: null,
+        user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
       });
+    }
+  };
+
+  /**
+   * Fetches the user's profile from the database and updates the auth state
+   *
+   * @param userId The ID of the user whose profile to fetch
+   * @returns Promise that resolves when the profile is fetched and state is updated
+   */
+  const fetchUserProfile = async (
+    userId: string
+  ): Promise<ProfileModel | null> => {
+    try {
+      // Fetch user profile from your database
+      const { data: userProfile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        if (error.code !== "PGRST116") {
+          // Not found
+          console.error("Error fetching user profile:", error);
+        }
+        return null;
+      }
+
+      // Update the auth state with the user profile
+      setAuthState((prev) => ({
+        ...prev,
+        profile: userProfile as ProfileModel,
+      }));
+
+      return userProfile as ProfileModel;
+    } catch (e) {
+      console.error("Error fetching user profile:", e);
+      return null;
+    }
+  };
+
+  /**
+   * Public function to update the user profile
+   * This can be called from anywhere in the app to refresh profile data
+   */
+  const updateUserProfile = async (): Promise<void> => {
+    if (authState.user?.id) {
+      await fetchUserProfile(authState.user.id);
     }
   };
 
@@ -180,8 +240,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setAuthState({
-      user: null,
       session: null,
+      user: null,
+      profile: null,
       isLoading: false,
       isAuthenticated: false,
     });
@@ -233,14 +294,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authState.onboardingStep &&
         authState.onboardingStep !== OnboardingStep.COMPLETED
       ) {
-        console.warn(
-          `Onboard process not complete! Navigating to ${authState.onboardingStep}`
-        );
-        console.log("Current onboarding step:", authState.onboardingStep);
-        console.log(
-          "Navigation path:",
-          `/(onboard)/${authState.onboardingStep}`
-        );
         //@ts-ignore
         router.replace(`/(onboard)/${authState.onboardingStep}`);
         return;
@@ -321,6 +374,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, []);
 
+  useEffect(() => {
+    // Only log when profile actually changes and isn't null
+    if (authState.profile) {
+      console.log('Profile updated:', prettyJSON(authState.profile));
+    }
+  }, [authState.profile]); 
+
   return (
     <AuthContext.Provider
       value={{
@@ -328,6 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         refreshSession,
         setOnboardingStep,
+        updateUserProfile
       }}>
       {children}
     </AuthContext.Provider>

@@ -79,6 +79,7 @@ export function createClientUser(input: NewUserInput, user: User): ClientUser {
       createdAt: new Date(),
       lastActiveAt: new Date(),
       profile: {
+        role: UserType.CLIENT,
         topicsOfInterest: [],
         experience: [],
         preferredCommunicationStyle: '',
