@@ -28,7 +28,7 @@ import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth
 import { AssessmentController } from '../../controller/onboard/AssessmentController';
 
 const AssessmentScreen = () => {
-  const { authState: {user, profile}, setOnboardingStep, updateUserProfile } = useAuth();
+  const { authState: {user, profile}, setOnboardingStep } = useAuth();
 
   const router = useRouter();
 
@@ -112,35 +112,6 @@ const AssessmentScreen = () => {
     } catch (error) {
       console.error('Error saving assessment data:', error);
       // Handle error appropriately
-    }
-  };
-
-  const formatAssessmentData = (answers: Record<string, any>) => {
-    // Transform answers into the format needed for your user profile
-    // This will vary based on your data model
-    
-    if (role === UserType.HOST) {
-      return {
-        profile: {
-          // Host-specific profile updates
-          yearsOfExperience: answers.host_experience,
-          specialties: answers.host_specialties,
-          supportStyle: answers.host_approach,
-          publicBio: answers.host_bio,
-          preferredCommunicationStyle: answers.communication_preference
-        }
-      };
-    } else {
-      return {
-        onboardSelections: {
-          // Client-specific profile updates
-          currentSupportNeeds: answers.client_needs,
-          shortTermGoals: [answers.client_goals],
-          previousSupport: [answers.client_experience],
-          preferredHostStyle: answers.client_style,
-          preferredCommunicationStyle: answers.communication_preference
-        }
-      };
     }
   };
 

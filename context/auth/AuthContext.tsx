@@ -29,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   refreshSession: async () => {},
   setOnboardingStep: async (state: OnboardingStep) => {},
   updateUserProfile: async () => {},
+  updateUserAssessment: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -81,17 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const determineOnboardingStep = async (userId: string | undefined) => {
     try {
       // First check stored step in AsyncStorage
-      const storedStep = await AsyncStorage.getItem("onboardingStep");
+      // const storedStep = await AsyncStorage.getItem("onboardingStep");
 
-      console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
+      // console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
 
-      if (storedStep) {
-        setAuthState((prev) => ({
-          ...prev,
-          onboardingStep: storedStep as OnboardingStep,
-        }));
-        return;
-      }
+      // if (storedStep) {
+      //   setAuthState((prev) => ({
+      //     ...prev,
+      //     onboardingStep: storedStep as OnboardingStep,
+      //   }));
+      //   return;
+      // }
 
       // If no stored step, check user's progress
       // Check if user has selected a role
@@ -246,6 +247,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error fetching assessments:", error);
         return null;
       }
+
+      console.log("User assessment fetched:", prettyJSON(userAssessments))
   
       // Update the auth state with all assessment responses
       setAuthState((prev) => ({
@@ -278,6 +281,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await fetchUserProfile(authState.user.id);
     }
   };
+
+    /**
+   * Public function to update the user profile
+   * This can be called from anywhere in the app to refresh profile data
+   */
+    const updateUserAssessment = async (): Promise<void> => {
+      if (authState.user?.id) {
+        await fetchUserAssessments(authState.user.id);
+      }
+    };
 
   /*
    * Signs out the active authenticated user.
@@ -439,6 +452,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshSession,
         setOnboardingStep,
         updateUserProfile,
+        updateUserAssessment
       }}>
       {children}
     </AuthContext.Provider>

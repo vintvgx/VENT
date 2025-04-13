@@ -21,6 +21,7 @@ export  type AuthContextType = {
     refreshSession: () => Promise<void>;
     setOnboardingStep: (state: OnboardingStep) => Promise<void>;
     updateUserProfile:  () => Promise<void>;
+    updateUserAssessment:  () => Promise<void>;
   };
   
 export type AuthState = {

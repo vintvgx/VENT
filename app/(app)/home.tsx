@@ -1,36 +1,36 @@
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
-import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
-    ScrollView
-} from "react-native";
+import { SafeAreaView, StyleSheet, Text, View, ScrollView } from "react-native";
 
 import { Button, ButtonText } from "@/components/ui/button";
 import { useAuth } from "@/context/auth/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthHook";
 import { prettyJSON } from "@/utils/strings/function";
+import { UserType } from "@/types/user/user";
 
 // Add this helper function to format assessment responses
 const formatAssessmentResponse = (response: { text?: string; value?: string; values?: string[] }) => {
+  if (!response) return "Not available";
   if (response.text) return response.text;
-  if (response.values) return response.values.join(', ');
+  if (response.values && Array.isArray(response.values)) return response.values.join(', ');
   if (response.value) return response.value;
-  return "Not available";
+  return JSON.stringify(response); // Fallback for any other format
 };
 
 const HomeScreen = () => {
-  const { authState: {user, profile, assessment}, signOut } = useAuth();
+  const {
+    authState: { user, profile, assessments },
+    signOut,
+    updateUserAssessment
+  } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
   };
 
   useEffect(() => {
-    console.log("Assessment", prettyJSON(assessment))
-  })
+    updateUserAssessment
+  }, [assessments]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,23 +48,20 @@ const HomeScreen = () => {
             <Text style={styles.username}>
               @{profile?.username || "Username"}
             </Text>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>
+            <View style={[styles.roleBadge, { backgroundColor: profile?.role === UserType.HOST ? 'red' : 'blue' }]}>
+              <Text style={[styles.roleText]}>
                 {profile?.role || "Role not set"}
               </Text>
             </View>
           </View>
           <View style={styles.divider} />
         </View>
-
         <Text style={styles.welcomeText}>Welcome to VENT!</Text>
-
         <Text style={styles.descriptionText}>
           VENT is focused on cultivating peer to peer connections based on
           shared experiences that provide emotional, past trauma or social
           support.
         </Text>
-
         {/* Account Information Section */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Account Information</Text>
@@ -72,10 +69,12 @@ const HomeScreen = () => {
             <InfoRow label="User ID" value={user?.id} />
             <InfoRow label="Email" value={user?.email} />
             <InfoRow label="Phone" value={user?.phone} />
-            <InfoRow label="Auth Provider" value={user?.app_metadata?.provider} />
+            <InfoRow
+              label="Auth Provider"
+              value={user?.app_metadata?.provider}
+            />
           </View>
         </View>
-
         {/* Profile Information Section */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Profile Information</Text>
@@ -86,36 +85,42 @@ const HomeScreen = () => {
             <InfoRow label="Date of Birth" value={profile?.dob} />
           </View>
         </View>
-
         {/* Assessment Information Section */}
+        // Update the Assessment Information Section to handle an array of
+        assessments
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Assessment Information</Text>
           <View style={styles.infoContainer}>
-            {assessment ? (
-              <>
-                <InfoRow 
-                  label="Question ID" 
-                  value={assessment.question_id} 
-                />
-                <InfoRow 
-                  label="Response" 
-                  value={formatAssessmentResponse(assessment.response)} 
-                />
-                <InfoRow 
-                  label="Version" 
-                  value={assessment.assessment_version?.toString()} 
-                />
-                <InfoRow 
-                  label="Last Updated" 
-                  value={new Date(assessment.updated_at).toLocaleDateString()} 
-                />
-              </>
+            {assessments && assessments.length > 0 ? (
+              assessments.map((assessment, index) => (
+                <View key={assessment.id} style={styles.assessmentItem}>
+                  <Text style={styles.assessmentTitle}>
+                    Assessment {index + 1}: {assessment.question_id}
+                  </Text>
+                  <InfoRow
+                    label="Response"
+                    value={formatAssessmentResponse(assessment.response)}
+                  />
+                  <InfoRow
+                    label="Version"
+                    value={assessment.assessment_version?.toString()}
+                  />
+                  <InfoRow
+                    label="Last Updated"
+                    value={new Date(assessment.updated_at).toLocaleDateString()}
+                  />
+                  {index < assessments.length - 1 && (
+                    <View style={styles.assessmentDivider} />
+                  )}
+                </View>
+              ))
             ) : (
-              <Text style={styles.noDataText}>No assessment data available</Text>
+              <Text style={styles.noDataText}>
+                No assessment data available
+              </Text>
             )}
           </View>
         </View>
-
         <View style={styles.buttonContainer}>
           <Button action="negative" onPress={handleSignOut}>
             <ButtonText>Sign Out</ButtonText>
@@ -127,7 +132,13 @@ const HomeScreen = () => {
 };
 
 // Helper component for consistent info row display
-const InfoRow = ({ label, value }: { label: string, value?: string | null }) => (
+const InfoRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) => (
   <View style={styles.infoRow}>
     <Text style={styles.infoLabel}>{label}:</Text>
     <Text style={styles.infoValue}>{value || "Not available"}</Text>
@@ -135,7 +146,6 @@ const InfoRow = ({ label, value }: { label: string, value?: string | null }) => 
 );
 
 export default HomeScreen;
-
 
 const styles = StyleSheet.create({
   container: {
@@ -189,38 +199,52 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   userHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 12,
   },
   username: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: "700",
+    color: "#000",
   },
   roleBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   roleText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: "#E5E5E5",
     marginVertical: 8,
   },
   noDataText: {
     fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
+    color: "#666",
+    fontStyle: "italic",
+    textAlign: "center",
     padding: 12,
+  },
+  assessmentItem: {
+    marginBottom: 16,
+  },
+  assessmentTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#007AFF",
+  },
+  assessmentDivider: {
+    height: 1,
+    backgroundColor: "#E5E5E5",
+    marginVertical: 12,
   },
 });
