@@ -20,6 +20,9 @@ const TextQuestion: React.FC<TextQuestionProps> = ({ question, value, onChange }
         multiline={true}
         numberOfLines={4}
         textAlignVertical="top"
+        accessibilityLabel={`Answer field for question: ${question.question}`}
+       maxLength={500}
+       returnKeyType="done"
       />
     </View>
   );

@@ -26,6 +26,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { UserType } from "@/types/user/user";
 import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";
 import { AssessmentController } from '../../controller/onboard/AssessmentController';
+import { ToastService } from "@/services/ToastService";
 
 const AssessmentScreen = () => {
   const { authState: {user, profile}, setOnboardingStep } = useAuth();
@@ -70,7 +71,12 @@ const AssessmentScreen = () => {
     }));
 
     // Save current answer to Supabase 
+    try {
     await AssessmentController.saveCurrentAnswer(questionId, answer, user, questions);
+    } catch (e: unknown) {
+      console.log("Error saving answer to supabase:", e)
+      ToastService.error(`Error saving answer to supabase: ${e}`)
+    }
   };
 
   const goToNextQuestion = () => {
@@ -186,7 +192,7 @@ const AssessmentScreen = () => {
                 
                 <Button
                   style={styles.navButton}
-                  disabled={currentQuestion.required && !assessment.answers[currentQuestion.id]}
+                  disabled={!AssessmentController.isValidAnswer(currentQuestion, assessment.answers[currentQuestion.id])}  
                   onPress={goToNextQuestion}
                 >
                   <Text>

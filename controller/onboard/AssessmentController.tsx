@@ -58,4 +58,20 @@ export class AssessmentController {
       ToastService.error('Failed to save your response. Please try again.');
     }
   };
+
+
+  static isValidAnswer = (question: AssessmentQuestion, answer: any): boolean => {
+    if (question.required && !answer) return false;
+    
+    // Additional type-specific validation
+    switch (question.type) {
+      case QuestionType.TEXT:
+        return typeof answer === 'string' && answer.trim().length > 0;
+      case QuestionType.MULTIPLE_CHOICE:
+        return answer !== undefined && answer !== null;
+      // Add cases for other question types
+      default:
+        return !!answer;
+    }
+  };
 }

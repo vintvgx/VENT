@@ -115,6 +115,7 @@ export const CLIENT_QUESTIONS: AssessmentQuestion[] = [
 ];
 
 export const COMMON_QUESTIONS: AssessmentQuestion[] = [
+  //TODO Apply time availability, language preference, etc.
   {
     id: "communication_preference",
     type: QuestionType.MULTIPLE_CHOICE,

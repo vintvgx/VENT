@@ -1,11 +1,9 @@
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
-import { SafeAreaView, StyleSheet, Text, View, ScrollView } from "react-native";
+import { SafeAreaView, StyleSheet, Text, View, ScrollView, Dimensions } from "react-native";
 
 import { Button, ButtonText } from "@/components/ui/button";
 import { useAuth } from "@/context/auth/AuthContext";
-import { useAuthGuard } from "@/hooks/useAuthHook";
-import { prettyJSON } from "@/utils/strings/function";
 import { UserType } from "@/types/user/user";
 
 // Add this helper function to format assessment responses
@@ -16,6 +14,8 @@ const formatAssessmentResponse = (response: { text?: string; value?: string; val
   if (response.value) return response.value;
   return JSON.stringify(response); // Fallback for any other format
 };
+
+const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
   const {
@@ -29,8 +29,8 @@ const HomeScreen = () => {
   };
 
   useEffect(() => {
-    updateUserAssessment
-  }, [assessments]);
+    updateUserAssessment()
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,30 +38,43 @@ const HomeScreen = () => {
         options={{
           title: "Home",
           headerBackVisible: false,
+          headerStyle: {
+            backgroundColor: "#6C63FF",
+          },
+          headerTintColor: "#fff",
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
         }}
       />
 
-      <ScrollView style={styles.contentContainer}>
-        {/* User Header Section */}
-        <View style={styles.headerSection}>
-          <View style={styles.userHeader}>
-            <Text style={styles.username}>
-              @{profile?.username || "Username"}
+      {/* Header with solid background */}
+      <View style={styles.header}>
+        <View style={styles.userHeader}>
+          <Text style={styles.username}>
+            @{profile?.username || "Username"}
+          </Text>
+          <View style={[
+            styles.roleBadge, 
+            { backgroundColor: profile?.role === UserType.HOST ? '#FF6B6B' : '#4ECDC4' }
+          ]}>
+            <Text style={styles.roleText}>
+              {profile?.role || "Role not set"}
             </Text>
-            <View style={[styles.roleBadge, { backgroundColor: profile?.role === UserType.HOST ? 'red' : 'blue' }]}>
-              <Text style={[styles.roleText]}>
-                {profile?.role || "Role not set"}
-              </Text>
-            </View>
           </View>
-          <View style={styles.divider} />
         </View>
         <Text style={styles.welcomeText}>Welcome to VENT!</Text>
-        <Text style={styles.descriptionText}>
-          VENT is focused on cultivating peer to peer connections based on
-          shared experiences that provide emotional, past trauma or social
-          support.
-        </Text>
+      </View>
+
+      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionText}>
+            VENT is focused on cultivating peer to peer connections based on
+            shared experiences that provide emotional, past trauma or social
+            support.
+          </Text>
+        </View>
+
         {/* Account Information Section */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Account Information</Text>
@@ -75,6 +88,7 @@ const HomeScreen = () => {
             />
           </View>
         </View>
+
         {/* Profile Information Section */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Profile Information</Text>
@@ -85,9 +99,8 @@ const HomeScreen = () => {
             <InfoRow label="Date of Birth" value={profile?.dob} />
           </View>
         </View>
+
         {/* Assessment Information Section */}
-        // Update the Assessment Information Section to handle an array of
-        assessments
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Assessment Information</Text>
           <View style={styles.infoContainer}>
@@ -121,9 +134,14 @@ const HomeScreen = () => {
             )}
           </View>
         </View>
+
         <View style={styles.buttonContainer}>
-          <Button action="negative" onPress={handleSignOut}>
-            <ButtonText>Sign Out</ButtonText>
+          <Button 
+            action="negative" 
+            onPress={handleSignOut}
+            style={styles.signOutButton}
+          >
+            <ButtonText style={styles.signOutText}>Sign Out</ButtonText>
           </Button>
         </View>
       </ScrollView>
@@ -150,53 +168,20 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    backgroundColor: "#6C63FF",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   contentContainer: {
     flex: 1,
-    padding: 24,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-  infoSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  infoContainer: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-    flexWrap: "wrap",
-  },
-  infoLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    width: 140,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: 16,
-  },
-  buttonContainer: {},
-  headerSection: {
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    marginTop: 30
   },
   userHeader: {
     flexDirection: "row",
@@ -207,13 +192,75 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#000",
+    color: "#fff",
+  },
+  welcomeText: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#fff",
+  },
+  descriptionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 0,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  descriptionText: {
+    fontSize: 16,
+    color: "#495057",
+    lineHeight: 24,
+  },
+  infoSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 12,
+    color: "#343a40",
+    paddingLeft: 8,
+  },
+  infoContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+    flexWrap: "wrap",
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    width: 140,
+    color: "#6C63FF",
+  },
+  infoValue: {
+    flex: 1,
+    fontSize: 16,
+    color: "#495057",
+  },
+  buttonContainer: {
+    marginVertical: 24,
+    alignItems: "center",
   },
   roleBadge: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   roleText: {
     color: "#FFF",
@@ -221,14 +268,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "capitalize",
   },
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E5E5",
-    marginVertical: 8,
-  },
   noDataText: {
     fontSize: 16,
-    color: "#666",
+    color: "#6c757d",
     fontStyle: "italic",
     textAlign: "center",
     padding: 12,
@@ -240,11 +282,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#007AFF",
+    color: "#6C63FF",
   },
   assessmentDivider: {
     height: 1,
-    backgroundColor: "#E5E5E5",
+    backgroundColor: "#e9ecef",
     marginVertical: 12,
   },
+  signOutButton: {
+    width: width * 0.8,
+    borderRadius: 12,
+  },
+  signOutText: {
+    fontWeight: "600",
+  }
 });

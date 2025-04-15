@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState, OnboardingStep } from "@/types/auth";
 import { AssessmentResponse } from "@/types/user/onboard";
-import { ProfileModel, UserModel } from "@/types/user/user";
+import { ProfileModel } from "@/types/user/user";
 import {
   checkAssessmentStatus,
   checkProfileStatus,
