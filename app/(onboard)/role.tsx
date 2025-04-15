@@ -1,18 +1,3 @@
-// import { StyleSheet, Text, View } from 'react-native'
-// import React from 'react'
-
-// const role = () => {
-//   return (
-//     <View>
-//       <Text>select</Text>
-//     </View>
-//   )
-// }
-
-// export default role
-
-// const styles = StyleSheet.create({})
-
 // app/(onboarding)/role-selection.tsx
 import React, { useState } from "react";
 import {
@@ -41,9 +26,11 @@ export default function role() {
   const showToast = useShowToast();
 
   const {
-    authState: { user },
+    authState: { user, profile },
     setOnboardingStep,
+    updateUserProfile
   } = useAuth();
+  
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,14 +81,17 @@ export default function role() {
       // Save the role to Supabase
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
+        username: profile?.username,
         role: selectedRole,
-        last_active_at: new Date(),
-        username: `temp_${user.id.substring(0, 8)}`,
-        dob: "01/01/1990", 
         updated_at: new Date()
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      } else {
+        await updateUserProfile();
+      }
+
 
       try {
         // Move to next step

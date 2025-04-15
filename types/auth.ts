@@ -1,4 +1,6 @@
 import { Session, User } from '@supabase/supabase-js';
+import { ProfileModel } from './user/user';
+import { AssessmentResponse } from './user/onboard';
 
 // This state tracks:
 // - user: The currently authenticated user (null if not logged in)
@@ -18,11 +20,15 @@ export  type AuthContextType = {
     signOut: () => Promise<void>;
     refreshSession: () => Promise<void>;
     setOnboardingStep: (state: OnboardingStep) => Promise<void>;
+    updateUserProfile:  () => Promise<void>;
+    updateUserAssessment:  () => Promise<void>;
   };
   
 export type AuthState = {
-  user: User | null;
   session: Session | null;
+  user: User | null;
+  profile: ProfileModel | null;
+  assessments: AssessmentResponse[] | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   onboardingStep?: OnboardingStep;

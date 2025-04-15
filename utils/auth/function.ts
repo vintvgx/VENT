@@ -213,7 +213,7 @@ export const checkProfileStatus = async (userId: string | undefined) => {
     }
 
     // Check if profile exists and has required fields
-    return data && data.name && data.bio; // adjust based on your required fields
+    return data && data.user_id && data.username; // adjust based on your required fields
   } catch (error) {
     console.error("Error in profile check:", error);
     return false;
@@ -230,7 +230,6 @@ export const checkAssessmentStatus = async (userId: string | undefined) => {
       .from("assessments")
       .select("*")
       .eq("user_id", userId)
-      .single();
 
     if (error) {
       console.error("Error checking assessment:", error);
@@ -238,7 +237,8 @@ export const checkAssessmentStatus = async (userId: string | undefined) => {
     }
 
     // Check if assessment exists and is complete
-    return data && data.completed;
+    //TODO update to include a completed prop to assess if assessment has been completed
+    return true//data && data.completed; 
   } catch (error) {
     console.error("Error in assessment check:", error);
     return false;

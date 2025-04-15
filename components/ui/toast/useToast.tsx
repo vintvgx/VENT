@@ -18,7 +18,8 @@ export enum TOAST {
   SUCCESS = 'success',
   NOTI = 'notification',
   INFO = 'info',
-  ERROR = 'error'
+  ERROR = 'error',
+  WARNING = 'warning'
 }
 
 export const useShowToast = () => {
@@ -100,7 +101,7 @@ export const useShowToast = () => {
               </Toast>
             );
 
-          case TOAST.INFO:
+          case TOAST.INFO || TOAST.WARNING:
           default:
             return (
               <Toast

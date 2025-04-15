@@ -3,6 +3,8 @@ import { User } from "@supabase/supabase-js";
 /**
  * Represents a user in the system, including their basic information,
  * profile data, and onboarding selections.
+ * 
+ * TODO Delete (using USER object from supabase)
  */
 export interface UserModel {
   user: User;
@@ -36,6 +38,7 @@ export enum UserType {
     lastName?: string | null;
     username?: string;
     createdAt?: Date | string | null;
+    dob?: Date | string;
     isAnonymous?: boolean; 
     lastActiveAt?: Date;
     phoneNumber?: string;
@@ -46,16 +49,21 @@ export enum UserType {
   
   /**
    * Represents a user's profile preferences, interests, and experiences.
+   * * Note: Property names use snake_case to match the database schema
    */
-export interface ProfileModel {
-    // Existing fields
-    topicsOfInterest: Array<{topic: string, relevanceScore: number}>;
-    experience: Array<{area: string, relevanceScore: number}>;
-    preferredCommunicationStyle: string; // e.g. "direct", "nurturing", "analytical"
-    boundariesAndTriggers?: string[]; // Optional personal boundaries
-    availabilityPreferences?: string; // When they prefer to engage
-    occupation?: string; // TODO required for host / optional for client ?
-
+  export type ProfileModel = {
+   /** Unique identifier for the profile */
+    id: string;
+    /** Reference to the user's ID in the auth system */
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    phone_number: string;
+    dob: string | null;
+    is_anon: boolean;
+    updated_at: string;
+    role: UserType;
   }
   
 /**
