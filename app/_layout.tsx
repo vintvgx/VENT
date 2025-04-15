@@ -17,11 +17,28 @@ import LoadingScreen from "./components/LoadingScreen";
 import { ToastProvider } from "@gluestack-ui/toast";
 import { useShowToast } from "@/components/ui/toast/useToast";
 import { ToastService } from "@/services/ToastService";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 300000, // 5 minutes
+      },
+    },
+  });
+
+
   const showToast = useShowToast();
 
   const colorScheme = useColorScheme();
@@ -52,9 +69,11 @@ export default function RootLayout() {
 
   // Render the AuthProvider, once font is loaded
   return (
+    <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AppContent />
     </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
