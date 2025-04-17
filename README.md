@@ -70,3 +70,4 @@ expo start --dev-client
 4/8 no development 
 4/12 no dev
 4/13 code review (pending)
+4/16 tanstack query implementation
