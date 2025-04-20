@@ -15,11 +15,6 @@ export function useAssessment() {
             .from("assessments")
             .select("*")
             .eq("user_id", user.id)
-            // .single();
-
-            console.log("🚀 ~ queryFn: ~ user id:", user.id)
-
-            console.log("🚀 ~ queryFn: user assessment data:", data)
 
           if (error) {
             // If no assessment exists yet, that's not an error
