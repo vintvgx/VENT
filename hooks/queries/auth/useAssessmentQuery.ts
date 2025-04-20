@@ -6,8 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 export function useAssessment() {
     const { authState: { user } } = useAuth();
 
-    const { data: assessmentData } = useQuery({
-        queryKey: ["assessment", user?.id],
+    return useQuery({
+        queryKey: ["assessments", user?.id],
         queryFn: async () => {
           if (!user) return null;
     
@@ -15,8 +15,12 @@ export function useAssessment() {
             .from("assessments")
             .select("*")
             .eq("user_id", user.id)
-            .single();
-    
+            // .single();
+
+            console.log("🚀 ~ queryFn: ~ user id:", user.id)
+
+            console.log("🚀 ~ queryFn: user assessment data:", data)
+
           if (error) {
             // If no assessment exists yet, that's not an error
             if (error.code === "PGRST116") return null;
@@ -25,6 +29,8 @@ export function useAssessment() {
     
           return data as AssessmentResponse[];
         },
+
+
         enabled: !!user,
       });
 }

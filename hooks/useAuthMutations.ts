@@ -95,7 +95,7 @@ export const useAuthMutations = () => {
     onSuccess: () => {
       // Invalidate relevant queries after successful verification
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      queryClient.invalidateQueries({ queryKey: ["assessment"] });
+      queryClient.invalidateQueries({ queryKey: ["assessments"] });
     },
   });
 

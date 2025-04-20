@@ -7,6 +7,8 @@ import { useAuth } from "@/context/auth/AuthContext";
 import { UserType } from "@/types/user/user";
 import { useAuthMutations } from "@/hooks/useAuthMutations";
 import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
+import { useAssessment } from "@/hooks/queries/auth/useAssessmentQuery";
 
 // Add this helper function to format assessment responses
 const formatAssessmentResponse = (response: { text?: string; value?: string; values?: string[] }) => {
@@ -23,9 +25,12 @@ const HomeScreen = () => {
   const queryClient = useQueryClient();
 
   const {
-    authState: { user, profile, assessments },
+    authState: { user },
     signOutMutation,
   } = useAuth();
+
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: assessments, isLoading: assessmentsLoading} = useAssessment()
 
 
   const handleSignOut = async () => {    
@@ -40,7 +45,7 @@ const HomeScreen = () => {
     queryClient.invalidateQueries({
       queryKey: ["assessments", user?.id],
     });
-  }, [user]);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>

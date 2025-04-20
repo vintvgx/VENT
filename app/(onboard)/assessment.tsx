@@ -24,9 +24,14 @@ import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuest
 import ScaleQuestion from "../components/assessment/ScaleQuestion";
 import TextQuestion from "../components/assessment/TextQuestion";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
+import { useAuthMutations } from "@/hooks/useAuthMutations";
 
 const AssessmentScreen = () => {
-  const { authState: {user, profile}, setOnboardingStep } = useAuth();
+  const { authState: {user}, setOnboardingStep } = useAuth();
+  const {data: profile, isLoading: profileLoading} = useProfile()
+  
+  const { updateProfileMutation } = useAuthMutations();
 
   const router = useRouter();
 
@@ -106,6 +111,11 @@ const AssessmentScreen = () => {
 
   const saveAssessmentData = async () => {
     try {
+       // Update the profile to mark assessment as completed
+       await updateProfileMutation.mutateAsync({
+        id: profile?.id,
+        assessment_completed: true
+      });
       
       // Mark onboarding as completed
       await setOnboardingStep(OnboardingStep.COMPLETED);

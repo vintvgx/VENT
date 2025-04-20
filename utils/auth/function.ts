@@ -213,7 +213,7 @@ export const checkProfileStatus = async (userId: string | undefined) => {
     }
 
     // Check if profile exists and has required fields
-    return data && data.user_id && data.username; // adjust based on your required fields
+    return data && data.id && data.username; // adjust based on your required fields
   } catch (error) {
     console.error("Error in profile check:", error);
     return false;
@@ -237,8 +237,7 @@ export const checkAssessmentStatus = async (userId: string | undefined) => {
     }
 
     // Check if assessment exists and is complete
-    //TODO update to include a completed prop to assess if assessment has been completed
-    return true//data && data.completed; 
+    return data// && data.assessment_completed 
   } catch (error) {
     console.error("Error in assessment check:", error);
     return false;

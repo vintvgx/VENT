@@ -216,7 +216,7 @@ export default function ProfileScreen() {
     ProfileController.checkAge(date);
   };
 
-  // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetimepicker
+  // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetime picker
   const renderDatePickerModal = () => {
     // This is a simplified date picker. In a production app, you would use a proper date picker component
     const years = Array.from(
@@ -720,7 +720,7 @@ export default function ProfileScreen() {
             </Button>
           </View>
 
-          {/* Extra space at the bottom to ensure scrollability */}
+          {/* Extra space at the bottom to ensure user can scroll */}
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>

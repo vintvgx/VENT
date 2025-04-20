@@ -54,13 +54,13 @@ export default function role() {
   const hostInfo = {
     title: "Becoming a Host",
     content:
-      "As a host, youll provide emotional and social support to others based on your own experiences. Hosts listen, share wisdom, and help others navigate their challenges. This role is ideal if you have experience youd like to share to help others, and youre willing to dedicate time to supporting the community. Hosts undergo additional verification and training to ensure they can provide appropriate support.",
+      "As a host, you'll provide emotional and social support to others based on your own experiences. Hosts listen, share wisdom, and help others navigate their challenges. This role is ideal if you have experience you'd like to share to help others, and you're willing to dedicate time to supporting the community. Hosts undergo additional verification and training to ensure they can provide appropriate support.",
   };
 
   const clientInfo = {
     title: "Joining as a Client",
     content:
-      "As a client, youll be able to connect with supportive hosts who have experiences similar to yours. This role allows you to seek guidance, share your challenges, and learn from others who understand what youre going through. Clients can browse hosts by shared experiences, send connection requests, and engage in meaningful conversations in a safe, supportive environment.",
+      "As a client, you'll be able to connect with supportive hosts who have experiences similar to yours. This role allows you to seek guidance, share your challenges, and learn from others who understand what you're going through. Clients can browse hosts by shared experiences, send connection requests, and engage in meaningful conversations in a safe, supportive environment.",
   };
 
   const showInfoModal = (role: UserType) => {
