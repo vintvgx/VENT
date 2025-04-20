@@ -64,6 +64,7 @@ export enum UserType {
     is_anon: boolean;
     updated_at: string;
     role: UserType;
+    assessment_completed?: boolean;
   }
   
 /**

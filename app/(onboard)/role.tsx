@@ -1,36 +1,40 @@
 // app/(onboarding)/role-selection.tsx
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Text,
-} from "react-native";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { supabase } from "@/lib/supabase/supabase";
-import { router } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Button } from "@/components/ui/button";
+import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth/AuthContext";
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
-import { UserType } from "@/types/user/user";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { supabase } from "@/lib/supabase/supabase";
 import { OnboardingStep } from "@/types/auth";
+import { UserType } from "@/types/user/user";
+import { prettyJSON } from "@/utils/strings/function";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function role() {
+export default function RoleSelectionScreen() {
+  const queryClient = useQueryClient();
+
   const showToast = useShowToast();
 
   const {
-    authState: { user, profile },
+    authState: { user },
     setOnboardingStep,
-    updateUserProfile
   } = useAuth();
-  
+
+  const { data: profile, isLoading: profileLoading } = useProfile();
+
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +54,13 @@ export default function role() {
   const hostInfo = {
     title: "Becoming a Host",
     content:
-      "As a host, youll provide emotional and social support to others based on your own experiences. Hosts listen, share wisdom, and help others navigate their challenges. This role is ideal if you have experience youd like to share to help others, and youre willing to dedicate time to supporting the community. Hosts undergo additional verification and training to ensure they can provide appropriate support.",
+      "As a host, you'll provide emotional and social support to others based on your own experiences. Hosts listen, share wisdom, and help others navigate their challenges. This role is ideal if you have experience you'd like to share to help others, and you're willing to dedicate time to supporting the community. Hosts undergo additional verification and training to ensure they can provide appropriate support.",
   };
 
   const clientInfo = {
     title: "Joining as a Client",
     content:
-      "As a client, youll be able to connect with supportive hosts who have experiences similar to yours. This role allows you to seek guidance, share your challenges, and learn from others who understand what youre going through. Clients can browse hosts by shared experiences, send connection requests, and engage in meaningful conversations in a safe, supportive environment.",
+      "As a client, you'll be able to connect with supportive hosts who have experiences similar to yours. This role allows you to seek guidance, share your challenges, and learn from others who understand what you're going through. Clients can browse hosts by shared experiences, send connection requests, and engage in meaningful conversations in a safe, supportive environment.",
   };
 
   const showInfoModal = (role: UserType) => {
@@ -83,24 +87,23 @@ export default function role() {
         id: user.id,
         username: profile?.username,
         role: selectedRole,
-        updated_at: new Date()
+        updated_at: new Date(),
       });
 
       if (error) {
         throw error;
       } else {
-        await updateUserProfile();
+        // re-fetch profile data
+        queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       }
-
 
       try {
         // Move to next step
         await setOnboardingStep(OnboardingStep.ASSESSMENT);
-        } catch (stepError: unknown) {
-          console.error("Error updating onboarding step:", stepError);
-          showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
-        }
-
+      } catch (stepError: unknown) {
+        console.error("Error updating onboarding step:", stepError);
+        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`);
+      }
     } catch (error) {
       console.error("Error saving role:", error);
       setError("Failed to save your selection. Please try again.");
@@ -108,6 +111,14 @@ export default function role() {
       setIsLoading(false);
     }
   };
+
+  if (profileLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText>Loading profile…</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>

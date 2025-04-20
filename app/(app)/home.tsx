@@ -5,6 +5,10 @@ import { SafeAreaView, StyleSheet, Text, View, ScrollView, Dimensions } from "re
 import { Button, ButtonText } from "@/components/ui/button";
 import { useAuth } from "@/context/auth/AuthContext";
 import { UserType } from "@/types/user/user";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
+import { useAssessment } from "@/hooks/queries/auth/useAssessmentQuery";
+import { ToastService } from "@/services/ToastService";
 
 // Add this helper function to format assessment responses
 const formatAssessmentResponse = (response: { text?: string; value?: string; values?: string[] }) => {
@@ -18,18 +22,30 @@ const formatAssessmentResponse = (response: { text?: string; value?: string; val
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
+  const queryClient = useQueryClient();
+
   const {
-    authState: { user, profile, assessments },
-    signOut,
-    updateUserAssessment
+    authState: { user },
+    signOutMutation,
   } = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: assessments, isLoading: assessmentsLoading} = useAssessment()
+
+
+  const handleSignOut = async () => {    
+    try {
+      await signOutMutation?.mutateAsync();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      ToastService.error(`Error signing out: ${error}`)
+    }
   };
 
   useEffect(() => {
-    updateUserAssessment()
+    queryClient.invalidateQueries({
+      queryKey: ["assessments", user?.id],
+    });
   }, []);
 
   return (

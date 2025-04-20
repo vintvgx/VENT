@@ -1,6 +1,5 @@
 import { Session, User } from '@supabase/supabase-js';
-import { ProfileModel } from './user/user';
-import { AssessmentResponse } from './user/onboard';
+import { UseMutationResult } from '@tanstack/react-query';
 
 // This state tracks:
 // - user: The currently authenticated user (null if not logged in)
@@ -15,20 +14,16 @@ export enum OnboardingStep {
   COMPLETED = 'completed'
 }
 
-export  type AuthContextType = {
-    authState: AuthState;
-    signOut: () => Promise<void>;
-    refreshSession: () => Promise<void>;
-    setOnboardingStep: (state: OnboardingStep) => Promise<void>;
-    updateUserProfile:  () => Promise<void>;
-    updateUserAssessment:  () => Promise<void>;
+export type AuthContextType = {
+  authState: AuthState;
+  refreshSession: () => Promise<void>;
+  setOnboardingStep: (state: OnboardingStep) => Promise<void>;
+  signOutMutation?: UseMutationResult<void, Error, void>;
   };
   
 export type AuthState = {
   session: Session | null;
   user: User | null;
-  profile: ProfileModel | null;
-  assessments: AssessmentResponse[] | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   onboardingStep?: OnboardingStep;

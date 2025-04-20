@@ -22,7 +22,7 @@ import { useEffect, useRef } from "react"
 const { width } = Dimensions.get("window")
 
 export default function OnboardingLayout() {
-  const { authState, signOut } = useAuth()
+  const { authState, signOutMutation } = useAuth()
   const router = useRouter()
   const progressAnimation = useRef(new Animated.Value(0)).current
 
@@ -102,9 +102,13 @@ export default function OnboardingLayout() {
     }
   }
 
-  const handleSignOut = () => {
-    // Add confirmation if needed
-    signOut()
+  //TODO Remove or place within Testing keypress 
+  const handleSignOut = async () => {
+    try {
+      await signOutMutation?.mutateAsync();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   }
 
   return (

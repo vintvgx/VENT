@@ -28,14 +28,16 @@ import { Calendar, Check } from "lucide-react-native";
 import React from "react";
 import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile";
 import { ProfileController } from "@/controller/onboard/ProfileController";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfileScreen() {
+  const queryClient = useQueryClient();
+
   const showToast = useShowToast();
 
   const {
     authState: { user },
     setOnboardingStep,
-    updateUserProfile,
   } = useAuth();
 
   // Form fields
@@ -214,7 +216,7 @@ export default function ProfileScreen() {
     ProfileController.checkAge(date);
   };
 
-  // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetimepicker
+  // Simple date picker modal - in a real app, you might want to use a library like @react-native-community/datetime picker
   const renderDatePickerModal = () => {
     // This is a simplified date picker. In a production app, you would use a proper date picker component
     const years = Array.from(
@@ -449,7 +451,8 @@ export default function ProfileScreen() {
       if (error) {
         throw error;
       } else {
-        await updateUserProfile();
+        // re-fetch profile data
+        queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       }
 
       try {
@@ -639,6 +642,9 @@ export default function ProfileScreen() {
                   <TextInput
                     style={[styles.input, usernameError && styles.inputError]}
                     value={username}
+                    autoCorrect={false}
+                    autoComplete="username"
+                    autoFocus={true}
                     onChangeText={(text) => {
                       setUsername(text);
                       validateUsername(text);
@@ -714,7 +720,7 @@ export default function ProfileScreen() {
             </Button>
           </View>
 
-          {/* Extra space at the bottom to ensure scrollability */}
+          {/* Extra space at the bottom to ensure user can scroll */}
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>
