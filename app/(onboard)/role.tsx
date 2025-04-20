@@ -6,7 +6,6 @@ import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth/AuthContext";
 import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
-import { useAuthQueries } from "@/hooks/useAuthQueries";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { supabase } from "@/lib/supabase/supabase";
 import { OnboardingStep } from "@/types/auth";
@@ -35,7 +34,6 @@ export default function role() {
   } = useAuth();
 
   const { data: profile, isLoading: profileLoading } = useProfile();
-
 
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
