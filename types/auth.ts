@@ -1,6 +1,4 @@
 import { Session, User } from '@supabase/supabase-js';
-import { ProfileModel } from './user/user';
-import { AssessmentResponse } from './user/onboard';
 import { UseMutationResult } from '@tanstack/react-query';
 
 // This state tracks:
@@ -26,7 +24,6 @@ export type AuthContextType = {
 export type AuthState = {
   session: Session | null;
   user: User | null;
-  // assessments: AssessmentResponse[] | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   onboardingStep?: OnboardingStep;

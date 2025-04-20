@@ -6,6 +6,7 @@ import {
   checkProfileStatus,
   checkRoleStatus,
 } from "@/utils/auth/function";
+import { logDebug } from "@/utils/strings/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,25 +35,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       console.log("Initializing auth");
       try {
-        // Get current session
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        // Add retry logic for network errors
+        let retries = 3;
+        let success = false;
+        let sessionData = null;
+        
+        while (retries > 0 && !success) {
+          // Get current session
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
 
-        if (error) {
-          console.error("Error getting initial session:", error);
-          setAuthState((prev) => ({
-            ...prev,
-            isLoading: false,
-            isAuthenticated: false,
-          }));
-          return;
+          if (error) {
+            if (error.message?.includes('network') && retries > 1) {
+              console.log(`Network error, retrying... (${retries-1} attempts left)`);
+              retries--;
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+            console.error("Error getting initial session:", error);
+            setAuthState((prev) => ({
+              ...prev,
+              isLoading: false,
+              isAuthenticated: false,
+            }));
+            return;
+          }
+          
+          success = true;
+          sessionData = session;
         }
-
-        if (session) {
+        
+        if (sessionData) {
           // Process the session and update state
-          await handleSessionChange(session);
+          await handleSessionChange(sessionData);
         } else {
           // No active session
           console.log("No active session");
@@ -93,9 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
       } else {
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
-
-        queryClient.invalidateQueries({ queryKey: ["assessment"] });
+        queryClient.invalidateQueries({ queryKey: ["profile", session?.user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["assessments", session?.user?.id]});
       }
     });
 
@@ -189,8 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState((prev) => ({
         ...prev,
         session: null,
-        user: null,
-        profile: null,
+        user: null,        
         isLoading: false,
         isAuthenticated: false,
       }));
@@ -212,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First check stored step in AsyncStorage
       const storedStep = await AsyncStorage.getItem("onboardingStep");
-      console.debug("AsyncStorage last stored step:", storedStep);
+      logDebug("AsyncStorage last stored step:", storedStep);
 
       if (storedStep) {
         setAuthState((prev) => ({
@@ -226,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if user has selected a role
       const hasProfile = await checkProfileStatus(userId);
       if (!hasProfile) {
-        console.debug("User has not set their profile")
+        logDebug("User has not set their profile")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.PROFILE,
@@ -236,14 +251,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const hasSelectedRole = await checkRoleStatus(userId);
       if (!hasSelectedRole) {
-        console.debug("User has not set their role")
+        logDebug("User has not set their role")
         setOnboardingStep(OnboardingStep.ROLE);
         return;
       }
 
       const hasCompletedAssessment = await checkAssessmentStatus(userId);
       if (!hasCompletedAssessment) {
-        console.debug("User has not completed their assessment")
+        logDebug("User has not completed their assessment")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.ASSESSMENT,
@@ -282,7 +297,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @param session - The current Supabase session or null if no active session
    */
   const handleSessionChange = async (session: Session | null) => {
-    console.debug("Handling session change");
+    logDebug("Handling session change");
     if (session) {
       setAuthState((prev) => ({
         ...prev,

@@ -1,6 +1,7 @@
 import { useAuth } from "@/context/auth/AuthContext";
 import { supabase } from "@/lib/supabase/supabase";
 import { AssessmentResponse } from "@/types/user/onboard";
+import { logDebug } from "@/utils/strings/function";
 import { useQuery } from "@tanstack/react-query";
 
 export function useAssessment() {
@@ -22,7 +23,7 @@ export function useAssessment() {
             throw error;
           }
     
-          console.log("Assessment data fetched successfully.")
+          logDebug("Assessment data fetched successfully.")
           return data as AssessmentResponse[];
         },
 

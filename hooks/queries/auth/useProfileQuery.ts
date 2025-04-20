@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useAuth } from "@/context/auth/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { ProfileModel } from "@/types/user/user";
+import { logDebug } from "@/utils/strings/function";
 
 export function useProfile() {
   const { authState: { user } } = useAuth();
@@ -19,7 +20,7 @@ export function useProfile() {
         
       if (error) throw error;
 
-      console.debug("Profile data fetched successfully.")
+      logDebug("Profile data fetched successfully.")
       return data as ProfileModel;
     },
     enabled: !!user,

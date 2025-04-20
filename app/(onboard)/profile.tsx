@@ -452,7 +452,7 @@ export default function ProfileScreen() {
         throw error;
       } else {
         // re-fetch profile data
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       }
 
       try {

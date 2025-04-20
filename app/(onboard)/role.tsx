@@ -23,7 +23,7 @@ import {
   View,
 } from "react-native";
 
-export default function role() {
+export default function RoleSelectionScreen() {
   const queryClient = useQueryClient();
 
   const showToast = useShowToast();
@@ -94,7 +94,7 @@ export default function role() {
         throw error;
       } else {
         // re-fetch profile data
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       }
 
       try {
@@ -111,6 +111,14 @@ export default function role() {
       setIsLoading(false);
     }
   };
+
+  if (profileLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText>Loading profile…</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>

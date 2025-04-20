@@ -18,9 +18,7 @@ const generateUsername = () => {
  * @param phoneNumber Optional phone number (primarily for mobile auth)
  * @returns Object containing success status and any error
  */
-export const updateUserMetadata = async (
-  userData?: UserMetaData
-) => {
+export const updateUserMetadata = async (userData?: UserMetaData) => {
   try {
     // Initialize user metadata with optional values from auth provider
     // Empty values are acceptable as user will complete profile during onboarding
@@ -28,7 +26,7 @@ export const updateUserMetadata = async (
     const metadataToUpdate = {
       first_name: userData?.firstName || "",
       last_name: userData?.lastName || "",
-      username: userData?.username || await generateUsername(),
+      username: userData?.username || (await generateUsername()),
       avatar_url: userData?.avatar || "",
       mobile: userData?.phoneNumber || "",
       email: userData?.email || "",
@@ -147,7 +145,7 @@ export const getCurrentSession = async () => {
     return null;
   }
 
-  return data.session;
+  return data?.session;
 };
 
 /**
@@ -170,34 +168,46 @@ export const signOut = async () => {
   }
 };
 
-// Check if user has selected a role
+/**
+ * Checks if the user has completed the role selection
+ * @param userId the user's id
+ * @returns true if the user has completed the role selection, false otherwise
+ */
 export const checkRoleStatus = async (userId: string | undefined) => {
-  if (userId === undefined) return false
+  if (userId === undefined) return false;
 
   try {
     // Query profiles table in Supabase
     const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
       .single();
 
     if (error) {
-      console.error('Error checking role:', error);
+      console.error("Error checking role:", error);
       return false;
     }
 
     // Check if role exists and is either 'host' or 'client'
-    return data && data.role && (data.role === UserType.HOST || data.role === UserType.CLIENT);
+    return (
+      data &&
+      data?.role &&
+      (data?.role === UserType.HOST || data.role === UserType.CLIENT)
+    );
   } catch (error) {
-    console.error('Error in role check:', error);
+    console.error("Error in role check:", error);
     return false;
   }
 };
 
-// Check if user has completed profile setup
+/**
+ * Checks if the user has completed profile setup
+ * @param userId the user's id
+ * @returns true if the user has completed profile setup, false otherwise
+ */
 export const checkProfileStatus = async (userId: string | undefined) => {
-  if (userId === undefined) return false
+  if (userId === undefined) return false;
 
   try {
     // Query your profile table in Supabase
@@ -213,31 +223,30 @@ export const checkProfileStatus = async (userId: string | undefined) => {
     }
 
     // Check if profile exists and has required fields
-    return data && data.id && data.username; // adjust based on your required fields
+    return data && data?.id && data?.username; // adjust based on your required fields
   } catch (error) {
     console.error("Error in profile check:", error);
     return false;
   }
 };
 
-// Check if user has completed assessment
+/**
+ * Checks if the user has completed the assessment
+ * @param userId the user's id
+ * @returns true if the user has completed the assessment, false otherwise
+ */
 export const checkAssessmentStatus = async (userId: string | undefined) => {
-  if (userId === undefined) return false
-  
+  if (userId === undefined) return false;
+
   try {
-    // Query your assessments table in Supabase
-    const { data, error } = await supabase
-      .from("assessments")
-      .select("*")
-      .eq("user_id", userId)
+    // Query the profile table and value of assessment_completed
+    const profile = await supabase
+      .from("profiles")
+      .select("assessment_completed")
+      .eq("id", userId)
+      .single();
 
-    if (error) {
-      console.error("Error checking assessment:", error);
-      return false;
-    }
-
-    // Check if assessment exists and is complete
-    return data// && data.assessment_completed 
+    return profile?.data?.assessment_completed || false;
   } catch (error) {
     console.error("Error in assessment check:", error);
     return false;

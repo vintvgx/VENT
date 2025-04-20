@@ -102,6 +102,7 @@ export default function OnboardingLayout() {
     }
   }
 
+  //TODO Remove or place within Testing keypress 
   const handleSignOut = async () => {
     try {
       await signOutMutation?.mutateAsync();
