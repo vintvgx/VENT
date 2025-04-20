@@ -136,5 +136,4 @@ export const handlers = [
     }, { status: 400 });
   }),
   
-  // Add more mocked endpoints as needed
 ]; 

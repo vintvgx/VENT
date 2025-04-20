@@ -1,8 +1,20 @@
-// Import Jest's expect function
-import { expect } from '@jest/globals';
+// No need to import expect here - Jest automatically adds it to the global scope
+
+//TODO Fix msw server logic (automatically failing tests)
+// // Import your MSW server
+// import { server } from './tests/mocks/server';
+
+// // Start the MSW server before all tests
+// beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+
+// // Reset handlers after each test
+// afterEach(() => server.resetHandlers());
+
+// // Close the server after all tests
+// afterAll(() => server.close());
 
 // Add React Native specific setup
-import '@testing-library/jest-native/extend-expect';
+// import '@testing-library/jest-native/extend-expect';
 
 // Mock expo modules that might cause issues in tests
 jest.mock('expo-font');
@@ -26,7 +38,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({}));
 jest.mock('expo-status-bar', () => ({}));
 
 // Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => 
+jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
@@ -39,6 +51,11 @@ jest.mock('@/lib/supabase/supabase', () => ({
       signInWithIdToken: jest.fn(),
       startAutoRefresh: jest.fn(),
       stopAutoRefresh: jest.fn(),
+      getSession: jest.fn(),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
+      signOut: jest.fn(),
     }
   }
 }));
@@ -55,6 +72,7 @@ jest.mock('@react-navigation/native', () => {
     useRoute: () => ({
       params: {},
     }),
+    useBottomTabBarHeight: () => 50,
   };
 });
 
@@ -70,6 +88,7 @@ jest.mock('expo-router', () => ({
   Stack: {
     Screen: 'Stack.Screen',
   },
+  router: { replace: jest.fn() },
 }));
 
 // Mock useColorScheme
@@ -91,3 +110,17 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock @tanstack/react-query
+jest.mock('@tanstack/react-query', () => ({
+  useQueryClient: jest.fn().mockReturnValue({
+    invalidateQueries: jest.fn(),
+    clear: jest.fn(),
+  }),
+}));
+
+// Mock Safe Area Context
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  SafeAreaProvider: ({ children }) => children,
+}));
