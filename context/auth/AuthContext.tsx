@@ -1,38 +1,23 @@
 // In AuthContext.tsx
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState, OnboardingStep } from "@/types/auth";
-import { AssessmentResponse } from "@/types/user/onboard";
-import { ProfileModel } from "@/types/user/user";
 import {
   checkAssessmentStatus,
   checkProfileStatus,
   checkRoleStatus,
 } from "@/utils/auth/function";
-import { prettyJSON } from "@/utils/strings/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-// Auth context with default values
-const AuthContext = createContext<AuthContextType>({
-  authState: {
-    session: null,
-    user: null,
-    profile: null,
-    assessments: null,
-    isLoading: true,
-    isAuthenticated: false,
-    onboardingStep: OnboardingStep.NONE,
-  },
-  signOut: async () => {},
-  refreshSession: async () => {},
-  setOnboardingStep: async (state: OnboardingStep) => {},
-  updateUserProfile: async () => {},
-  updateUserAssessment: async () => {},
-});
+// Create the context with default values
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
+
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     user: null,
@@ -43,9 +28,152 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onboardingStep: OnboardingStep.NONE,
   });
 
-  // Add a state to track initial navigation
+  // state to track initial navigation
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize session data and set up auth listeners
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Get current session
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error getting initial session:", error);
+          setAuthState((prev) => ({
+            ...prev,
+            isLoading: false,
+            isAuthenticated: false,
+          }));
+          return;
+        }
+
+        if (session) {
+          // Process the session and update state
+          await handleSessionChange(session);
+        } else {
+          // No active session
+          setAuthState((prev) => ({
+            ...prev,
+            isLoading: false,
+            isAuthenticated: false,
+          }));
+        }
+
+        // Mark initialization as complete after auth is processed
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Fatal error during auth initialization:", error);
+        setAuthState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+        }));
+        setIsInitialized(true);
+      }
+    };
+
+    // Set up auth state change listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Supabase auth event: ${event}`);
+      await handleSessionChange(session);
+
+      // Invalidate queries that depend on authentication state
+      if (session?.user?.id) {
+        queryClient.invalidateQueries({
+          queryKey: ["profile", session.user.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["assessments", session.user.id],
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+
+        queryClient.invalidateQueries({ queryKey: ["assessment"] });
+      }
+    });
+
+    // Start the initialization process
+    initializeAuth();
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
+
+    // Handle navigation based on auth and onboarding state
+    useEffect(() => {
+      console.log("Handling navigation based on auth and onboarding state");
+      if (authState.isLoading) return;
+  
+      if (isInitialized) {
+        // Not authenticated
+        if (!authState.session) {
+          router.replace("/(public)/auth");
+          return;
+        }
+  
+        // Authenticated but in onboarding
+        if (
+          authState.onboardingStep &&
+          authState.onboardingStep !== OnboardingStep.COMPLETED
+        ) {
+          //@ts-ignore
+          router.replace(`/(onboard)/${authState.onboardingStep}`);
+          return;
+        }
+  
+        // Fully authenticated and onboarded
+        if (
+          authState.isAuthenticated &&
+          authState.session &&
+          (!authState.onboardingStep ||
+            authState.onboardingStep === OnboardingStep.COMPLETED)
+        ) {
+          router.replace("/(app)/home");
+        }
+      }
+    }, [authState, isInitialized]);
+
+  /**
+   * Mutation for signing out the user
+   * @returns void
+   */
+  const signOutMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setAuthState({
+        session: null,
+        user: null,
+        profile: null,
+        assessments: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+
+      // Only navigate after signing out if initialization is complete
+      if (isInitialized) {
+        router.replace("/(public)/auth");
+      }
+
+      // Clear all queries from the cache on signout
+      queryClient.clear();
+    },
+  });
+
+  /**
+   * Refreshes the session
+   * @returns void
+   */
   const refreshSession = async () => {
     const { data, error } = await supabase.auth.getSession();
 
@@ -82,17 +210,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const determineOnboardingStep = async (userId: string | undefined) => {
     try {
       // First check stored step in AsyncStorage
-      // const storedStep = await AsyncStorage.getItem("onboardingStep");
+      const storedStep = await AsyncStorage.getItem("onboardingStep");
 
       // console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
 
-      // if (storedStep) {
-      //   setAuthState((prev) => ({
-      //     ...prev,
-      //     onboardingStep: storedStep as OnboardingStep,
-      //   }));
-      //   return;
-      // }
+      if (storedStep) {
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: storedStep as OnboardingStep,
+        }));
+        return;
+      }
 
       // If no stored step, check user's progress
       // Check if user has selected a role
@@ -156,19 +284,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session.user,
         session,
         isAuthenticated: true,
-        isLoading: true,
         // Keep isLoading true until we check onboarding
+        isLoading: true,
       }));
 
-      // Fetch user profile
+      // Fetch user profile & assessments
       if (session.user?.id) {
-        await fetchUserProfile(session.user.id);
-        await fetchUserAssessments(session.user.id)
+        // This will trigger a refetch of the profile query
+        queryClient.invalidateQueries({
+          queryKey: ["profile", session.user.id],
+        });
+
+        // Similarly for assessments if you have a query for that
+        queryClient.invalidateQueries({
+          queryKey: ["assessments", session.user.id],
+        });
       }
+
       //Update the state with the final loading state
       // The onboardingStep is already set by determineOnboardingStep
       await determineOnboardingStep(session.user.id);
-      
+
       // Update the state
       setAuthState((prev) => ({
         ...prev,
@@ -184,135 +320,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
       });
-    }
-  };
-
-  /**
-   * Fetches the user's profile from the database and updates the auth state
-   *
-   * @param userId The ID of the user whose profile to fetch
-   * @returns Promise that resolves when the profile is fetched and state is updated
-   */
-  const fetchUserProfile = async (
-    userId: string
-  ): Promise<ProfileModel | null> => {
-    try {
-      // Fetch user profile from your database
-      const { data: userProfile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        if (error.code !== "PGRST116") {
-          // Not found
-          console.error("Error fetching user profile:", error);
-        }
-        return null;
-      }
-
-      // Update the auth state with the user profile
-      setAuthState((prev) => ({
-        ...prev,
-        profile: userProfile as ProfileModel,
-      }));
-
-      return userProfile as ProfileModel;
-    } catch (e) {
-      console.error("Error fetching user profile:", e);
-      setAuthState({
-        session: null,
-        user: null,
-        profile: null,
-        assessments: null,
-        isLoading: false,
-        isAuthenticated: false,
-        onboardingStep: OnboardingStep.NONE,
-      });
-      return null;
-    }
-  };
-
-  const fetchUserAssessments = async (
-    userId: string
-  ): Promise<AssessmentResponse[] | null> => {
-    try {
-      const { data: userAssessments, error } = await supabase
-        .from("assessments")
-        .select("*")
-        .eq("user_id", userId);
-  
-      if (error) {
-        console.error("Error fetching assessments:", error);
-        return null;
-      }
-
-      console.log("User assessment fetched:", prettyJSON(userAssessments))
-  
-      // Update the auth state with all assessment responses
-      setAuthState((prev) => ({
-        ...prev,
-        assessments: userAssessments as AssessmentResponse[]
-      }));
-  
-      return userAssessments as AssessmentResponse[];
-    } catch (e: unknown) {
-      console.error("Error fetching user assessments:", e);
-      setAuthState({
-        session: null,
-        user: null,
-        profile: null,
-        assessments: [],
-        isLoading: false,
-        isAuthenticated: false,
-        onboardingStep: OnboardingStep.NONE,
-      });
-      return null;
-    }
-  };
-
-  /**
-   * Public function to update the user profile
-   * This can be called from anywhere in the app to refresh profile data
-   */
-  const updateUserProfile = async (): Promise<void> => {
-    if (authState.user?.id) {
-      await fetchUserProfile(authState.user.id);
-    }
-  };
-
-    /**
-   * Public function to update the user profile
-   * This can be called from anywhere in the app to refresh profile data
-   */
-    const updateUserAssessment = async (): Promise<void> => {
-      if (authState.user?.id) {
-        await fetchUserAssessments(authState.user.id);
-      }
-    };
-
-  /*
-   * Signs out the active authenticated user.
-   */
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Sign Out Error:", error);
-    }
-
-    setAuthState({
-      session: null,
-      user: null,
-      profile: null,
-      assessments: null,
-      isLoading: false,
-      isAuthenticated: false,
-    });
-
-    // Only navigate after signing out if initialization is complete
-    if (isInitialized) {
-      router.replace("/(public)/auth");
+      // Clear all queries from the cache on signout
+      queryClient.clear();
     }
   };
 
@@ -334,131 +343,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await AsyncStorage.setItem("onboardingStep", state);
       } catch (error) {
-        console.error("Error saving onboarding step to AsyncStorage:", error);
         // State is already updated in memory, so we can continue even if storage fails
+        console.error("Error saving onboarding step to AsyncStorage:", error);
       }
     }
   };
-
-  // Handle navigation based on auth and onboarding state
-  useEffect(() => {
-    console.log("Handling navigation based on auth and onboarding state");
-    if (authState.isLoading) return;
-
-    if (isInitialized) {
-      // Not authenticated
-      if (!authState.session) {
-        router.replace("/(public)/auth");
-        return;
-      }
-
-      // Authenticated but in onboarding
-      if (
-        authState.onboardingStep &&
-        authState.onboardingStep !== OnboardingStep.COMPLETED
-      ) {
-        //@ts-ignore
-        router.replace(`/(onboard)/${authState.onboardingStep}`);
-        return;
-      }
-
-      // Fully authenticated and onboarded
-      if (
-        authState.isAuthenticated &&
-        authState.session &&
-        (!authState.onboardingStep ||
-          authState.onboardingStep === OnboardingStep.COMPLETED)
-      ) {
-        router.replace("/(app)/home");
-      }
-    }
-  }, [authState, isInitialized]);
-
-  // Subscribe to auth changes on mount
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Get current session
-        const {
-          data: { session: currentSession },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Error getting initial session:", error);
-          setAuthState((prev) => ({
-            ...prev,
-            isLoading: false,
-            isAuthenticated: false,
-          }));
-          return;
-        }
-
-        if (currentSession) {
-          // Set initial auth state with current session
-          await handleSessionChange(currentSession);
-        } else {
-          // No active session
-          setAuthState((prev) => ({
-            ...prev,
-            isLoading: false,
-            isAuthenticated: false,
-          }));
-        }
-
-        // Set up auth state change listener
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            console.log(`Supabase auth event: ${event}`);
-            await handleSessionChange(session);
-
-            // Navigation will happen in the useEffect above
-          }
-        );
-
-        // Mark initialization as complete, which will trigger navigation
-        setIsInitialized(true);
-
-        // Cleanup subscription on unmount
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Fatal error during auth initialization:", error);
-        setAuthState((prev) => ({
-          ...prev,
-          isLoading: false,
-          isAuthenticated: false,
-        }));
-        setIsInitialized(true); // Still mark as initialized so navigation can happen
-      }
-    };
-
-    initializeAuth();
-  }, []);
-
-  useEffect(() => {
-    // Only log when profile actually changes and isn't null
-    if (authState.profile) {
-      console.log("Profile updated:", prettyJSON(authState.profile));
-    }
-  }, [authState.profile]);
-
+  
   return (
     <AuthContext.Provider
       value={{
         authState,
-        signOut,
+        signOutMutation,
         refreshSession,
         setOnboardingStep,
-        updateUserProfile,
-        updateUserAssessment
       }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
