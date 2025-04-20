@@ -1,32 +1,28 @@
 // app/(onboard)/assessment.tsx
-import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ThemedText";
-import { supabase } from "@/lib/supabase/supabase";
-import { router, useRouter } from "expo-router";
-import { useAuth } from "@/context/auth/AuthContext";
-import { OnboardingStep } from "@/types/auth";
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
-import TextQuestion from "../components/assessment/TextQuestion";
-import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboard";
-import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuestion";
-import ScaleQuestion from "../components/assessment/ScaleQuestion";
-import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
 import { ThemedView } from "@/components/ThemedView";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/auth/AuthContext";
+import { ToastService } from "@/services/ToastService";
+import { OnboardingStep } from "@/types/auth";
+import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboard";
 import { UserType } from "@/types/user/user";
 import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 import { AssessmentController } from '../../controller/onboard/AssessmentController';
-import { ToastService } from "@/services/ToastService";
+import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
+import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuestion";
+import ScaleQuestion from "../components/assessment/ScaleQuestion";
+import TextQuestion from "../components/assessment/TextQuestion";
 
 const AssessmentScreen = () => {
   const { authState: {user, profile}, setOnboardingStep } = useAuth();

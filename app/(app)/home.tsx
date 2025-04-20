@@ -5,6 +5,8 @@ import { SafeAreaView, StyleSheet, Text, View, ScrollView, Dimensions } from "re
 import { Button, ButtonText } from "@/components/ui/button";
 import { useAuth } from "@/context/auth/AuthContext";
 import { UserType } from "@/types/user/user";
+import { useAuthMutations } from "@/hooks/useAuthMutations";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Add this helper function to format assessment responses
 const formatAssessmentResponse = (response: { text?: string; value?: string; values?: string[] }) => {
@@ -18,19 +20,27 @@ const formatAssessmentResponse = (response: { text?: string; value?: string; val
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
+  const queryClient = useQueryClient();
+
   const {
     authState: { user, profile, assessments },
-    signOut,
-    updateUserAssessment
+    signOutMutation,
   } = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
+
+  const handleSignOut = async () => {    
+    try {
+      await signOutMutation?.mutateAsync();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   useEffect(() => {
-    updateUserAssessment()
-  }, []);
+    queryClient.invalidateQueries({
+      queryKey: ["assessments", user?.id],
+    });
+  }, [user]);
 
   return (
     <SafeAreaView style={styles.container}>

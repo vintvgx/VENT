@@ -1,36 +1,36 @@
 // app/(onboarding)/role-selection.tsx
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Text,
-} from "react-native";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { supabase } from "@/lib/supabase/supabase";
-import { router } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Button } from "@/components/ui/button";
+import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth/AuthContext";
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
-import { UserType } from "@/types/user/user";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { supabase } from "@/lib/supabase/supabase";
 import { OnboardingStep } from "@/types/auth";
+import { UserType } from "@/types/user/user";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function role() {
+  const queryClient = useQueryClient();
+
   const showToast = useShowToast();
 
   const {
     authState: { user, profile },
     setOnboardingStep,
-    updateUserProfile
   } = useAuth();
-  
+
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,24 +83,23 @@ export default function role() {
         id: user.id,
         username: profile?.username,
         role: selectedRole,
-        updated_at: new Date()
+        updated_at: new Date(),
       });
 
       if (error) {
         throw error;
       } else {
-        await updateUserProfile();
+        // re-fetch profile data
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
       }
-
 
       try {
         // Move to next step
         await setOnboardingStep(OnboardingStep.ASSESSMENT);
-        } catch (stepError: unknown) {
-          console.error("Error updating onboarding step:", stepError);
-          showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`)
-        }
-
+      } catch (stepError: unknown) {
+        console.error("Error updating onboarding step:", stepError);
+        showToast(TOAST.ERROR, `Error updating onboarding step: ${stepError}`);
+      }
     } catch (error) {
       console.error("Error saving role:", error);
       setError("Failed to save your selection. Please try again.");

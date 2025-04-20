@@ -28,14 +28,16 @@ import { Calendar, Check } from "lucide-react-native";
 import React from "react";
 import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile";
 import { ProfileController } from "@/controller/onboard/ProfileController";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfileScreen() {
+  const queryClient = useQueryClient();
+
   const showToast = useShowToast();
 
   const {
     authState: { user },
     setOnboardingStep,
-    updateUserProfile,
   } = useAuth();
 
   // Form fields
@@ -449,7 +451,8 @@ export default function ProfileScreen() {
       if (error) {
         throw error;
       } else {
-        await updateUserProfile();
+        // re-fetch profile data
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
       }
 
       try {
