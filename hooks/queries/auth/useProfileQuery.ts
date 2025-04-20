@@ -18,6 +18,8 @@ export function useProfile() {
         .single();
         
       if (error) throw error;
+
+      console.debug("Profile data fetched successfully.")
       return data as ProfileModel;
     },
     enabled: !!user,

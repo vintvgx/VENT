@@ -5,12 +5,15 @@ import { ToastService } from "@/services/ToastService";
 import { AssessmentResponse } from "@/types/user/onboard";
 import { ProfileModel } from "@/types/user/user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "./queries/auth/useProfileQuery";
 
 export const useAuthMutations = () => {
   const {
     authState: { user },
   } = useAuth();
   const queryClient = useQueryClient();
+
+  const {data: profile, isLoading: profileLoading} = useProfile()
 
   /**
    * Mutation for updating user profile
@@ -24,7 +27,8 @@ export const useAuthMutations = () => {
       const { data, error } = await supabase
         .from("profiles")
         .upsert({
-          user_id: user.id,
+          id: user.id,
+          username: profile?.username,
           ...updates,
           updated_at: new Date().toISOString(),
         })
@@ -32,9 +36,11 @@ export const useAuthMutations = () => {
         .single();
 
       if (error) throw error;
+      console.log("Profile data updated successfully.")
       return data as ProfileModel;
     },
     onError: (data) => {
+      console.error("Error updating profile data:", data);
       ToastService.error("Failed to update profile data.");
     },
     onSuccess: (data) => {
@@ -68,6 +74,7 @@ export const useAuthMutations = () => {
       return data as AssessmentResponse;
     },
     onError: (data) => {
+      console.error("Error updating assessment data:", data);
       ToastService.error("Failed to update assessment data.");
     },
     onSuccess: (data) => {
@@ -92,6 +99,10 @@ export const useAuthMutations = () => {
       if (error) throw error;
       return data;
     },
+    onError: (data) => {
+      console.error("Error verifying OTP:", data);
+      ToastService.error("Failed to verify OTP.");
+    },
     onSuccess: () => {
       // Invalidate relevant queries after successful verification
       queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -109,6 +120,10 @@ export const useAuthMutations = () => {
       const { data, error } = await supabase.auth.signInWithOtp({ phone });
       if (error) throw error;
       return data;
+    },
+    onError: (data) => {
+      console.error("Error signing in with OTP:", data);
+      ToastService.error("Failed to sign in with OTP.");
     },
   });
   

@@ -94,9 +94,6 @@ const AssessmentScreen = () => {
         ...prev,
         isComplete: true
       }));
-      
-      // Save assessment data
-      saveAssessmentData();
     }
   };
 
@@ -113,7 +110,6 @@ const AssessmentScreen = () => {
     try {
        // Update the profile to mark assessment as completed
        await updateProfileMutation.mutateAsync({
-        id: profile?.id,
         assessment_completed: true
       });
       

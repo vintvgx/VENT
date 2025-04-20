@@ -10,7 +10,6 @@ export class AssessmentController {
     user: User | null,
     questions: AssessmentQuestion[]
   ) => {
-    console.log("Saving user answer")
     try {
       if (!user?.id) return;
 

@@ -82,8 +82,6 @@ export default function role() {
     try {
       if (!user) throw new Error("User not authenticated");
 
-      console.log("Role Profile is: ", prettyJSON(profile))
-
       // Save the role to Supabase
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,

@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize session data and set up auth listeners
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log("Initializing auth");
       try {
         // Get current session
         const {
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleSessionChange(session);
         } else {
           // No active session
+          console.log("No active session");
           setAuthState((prev) => ({
             ...prev,
             isLoading: false,
@@ -146,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const signOutMutation = useMutation({
     mutationFn: async () => {
+      console.log("Signing out");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     },
@@ -172,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @returns void
    */
   const refreshSession = async () => {
+    console.log("Refreshing session");
     const { data, error } = await supabase.auth.getSession();
 
     if (error) {
@@ -208,22 +212,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // First check stored step in AsyncStorage
       const storedStep = await AsyncStorage.getItem("onboardingStep");
+      console.debug("AsyncStorage last stored step:", storedStep);
 
-      console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
-
-      // if (storedStep) {
-      //   setAuthState((prev) => ({
-      //     ...prev,
-      //     onboardingStep: storedStep as OnboardingStep,
-      //   }));
-      //   return;
-      // }
+      if (storedStep) {
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: storedStep as OnboardingStep,
+        }));
+        return;
+      }
 
       // If no stored step, check user's progress
       // Check if user has selected a role
       const hasProfile = await checkProfileStatus(userId);
       if (!hasProfile) {
-        console.log("User has not set their profile")
+        console.debug("User has not set their profile")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.PROFILE,
@@ -233,14 +236,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const hasSelectedRole = await checkRoleStatus(userId);
       if (!hasSelectedRole) {
-        console.log("User has not set their role")
+        console.debug("User has not set their role")
         setOnboardingStep(OnboardingStep.ROLE);
         return;
       }
 
       const hasCompletedAssessment = await checkAssessmentStatus(userId);
       if (!hasCompletedAssessment) {
-        console.log("User has not completed their assessment")
+        console.debug("User has not completed their assessment")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.ASSESSMENT,
@@ -253,6 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         onboardingStep: OnboardingStep.COMPLETED,
       }));
+      await AsyncStorage.removeItem("onboardingStep");
     } catch (error) {
       console.error("Error determining onboarding step:", error);
       // In case of error, set a default
@@ -278,6 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * @param session - The current Supabase session or null if no active session
    */
   const handleSessionChange = async (session: Session | null) => {
+    console.debug("Handling session change");
     if (session) {
       setAuthState((prev) => ({
         ...prev,

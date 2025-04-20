@@ -22,6 +22,7 @@ export function useAssessment() {
             throw error;
           }
     
+          console.log("Assessment data fetched successfully.")
           return data as AssessmentResponse[];
         },
 
