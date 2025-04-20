@@ -26,8 +26,7 @@ export type AuthContextType = {
 export type AuthState = {
   session: Session | null;
   user: User | null;
-  profile: ProfileModel | null;
-  assessments: AssessmentResponse[] | null;
+  // assessments: AssessmentResponse[] | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   onboardingStep?: OnboardingStep;

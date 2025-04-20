@@ -642,6 +642,9 @@ export default function ProfileScreen() {
                   <TextInput
                     style={[styles.input, usernameError && styles.inputError]}
                     value={username}
+                    autoCorrect={false}
+                    autoComplete="username"
+                    autoFocus={true}
                     onChangeText={(text) => {
                       setUsername(text);
                       validateUsername(text);

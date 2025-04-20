@@ -21,8 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     user: null,
-    profile: null,
-    assessments: null,
     isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
@@ -91,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({
           queryKey: ["assessments", session.user.id],
         });
+
       } else {
         queryClient.invalidateQueries({ queryKey: ["profile"] });
 
@@ -154,8 +153,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         session: null,
         user: null,
-        profile: null,
-        assessments: null,
         isLoading: false,
         isAuthenticated: false,
       });
@@ -212,20 +209,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // First check stored step in AsyncStorage
       const storedStep = await AsyncStorage.getItem("onboardingStep");
 
-      // console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
+      console.log("🚀 ~ determineOnboardingStep ~ storedStep:", storedStep);
 
-      if (storedStep) {
-        setAuthState((prev) => ({
-          ...prev,
-          onboardingStep: storedStep as OnboardingStep,
-        }));
-        return;
-      }
+      // if (storedStep) {
+      //   setAuthState((prev) => ({
+      //     ...prev,
+      //     onboardingStep: storedStep as OnboardingStep,
+      //   }));
+      //   return;
+      // }
 
       // If no stored step, check user's progress
       // Check if user has selected a role
       const hasProfile = await checkProfileStatus(userId);
       if (!hasProfile) {
+        console.log("User has not set their profile")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.PROFILE,
@@ -235,12 +233,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const hasSelectedRole = await checkRoleStatus(userId);
       if (!hasSelectedRole) {
+        console.log("User has not set their role")
         setOnboardingStep(OnboardingStep.ROLE);
         return;
       }
 
       const hasCompletedAssessment = await checkAssessmentStatus(userId);
       if (!hasCompletedAssessment) {
+        console.log("User has not completed their assessment")
         setAuthState((prev) => ({
           ...prev,
           onboardingStep: OnboardingStep.ASSESSMENT,
@@ -314,8 +314,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         session: null,
         user: null,
-        profile: null,
-        assessments: null,
         isLoading: false,
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
@@ -348,7 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   };
-  
+
   return (
     <AuthContext.Provider
       value={{

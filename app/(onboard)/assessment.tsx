@@ -23,6 +23,7 @@ import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
 import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuestion";
 import ScaleQuestion from "../components/assessment/ScaleQuestion";
 import TextQuestion from "../components/assessment/TextQuestion";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AssessmentScreen = () => {
   const { authState: {user, profile}, setOnboardingStep } = useAuth();
@@ -108,6 +109,9 @@ const AssessmentScreen = () => {
       
       // Mark onboarding as completed
       await setOnboardingStep(OnboardingStep.COMPLETED);
+
+      // Delete onboardingStep ref in storage
+      await AsyncStorage.removeItem("onboardingStep");
       
       // Navigate to home/dashboard
       router.replace('/(app)/home');
