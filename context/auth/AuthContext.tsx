@@ -174,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
         isLoading: false,
         isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
       });
 
       // Only navigate after signing out if initialization is complete
@@ -183,6 +184,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Clear all queries from the cache on signout
       queryClient.clear();
+    },
+    onError: (error) => {
+      console.error("Error signing out:", error);
+      // reset the auth state to maintain consistent state
+      setAuthState({
+        session: null,
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
+      });
+
+      if (isInitialized) {
+        router.replace("/(public)/auth");
+      }
     },
   });
 
