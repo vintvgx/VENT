@@ -16,7 +16,7 @@ jest.mock("@/lib/supabase/supabase", () => ({
     auth: {
       getSession: jest.fn(),
       onAuthStateChange: jest.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: jest.fn() } }
+        data: { subscription: { unsubscribe: jest.fn() } },
       }),
       signOut: jest.fn(),
     },
@@ -54,12 +54,12 @@ jest.mock("expo-router", () => ({
 jest.mock("@tanstack/react-query", () => ({
   useQueryClient: jest.fn(),
   useMutation: jest.fn().mockReturnValue({
-    mutate: jest.fn(),        // Mock function for triggering mutations
-    mutateAsync: jest.fn(),   // Mock function for async mutations
-    isLoading: false,         // Default loading state
-    isError: false,          // Default error state
-    isSuccess: false,        // Default success state
-    error: null              // Default error value
+    mutate: jest.fn(), // Mock function for triggering mutations
+    mutateAsync: jest.fn(), // Mock function for async mutations
+    isLoading: false, // Default loading state
+    isError: false, // Default error state
+    isSuccess: false, // Default success state
+    error: null, // Default error value
   }),
 }));
 
@@ -67,7 +67,8 @@ const mockInvalidateQueries = jest.fn();
 const mockClear = jest.fn();
 
 function TestComponent() {
-  const { authState, signOutMutation, refreshSession, setOnboardingStep } = useAuth();
+  const { authState, signOutMutation, refreshSession, setOnboardingStep } =
+    useAuth();
   return (
     <>
       <>{JSON.stringify(authState)}</>
@@ -78,7 +79,7 @@ function TestComponent() {
   );
 }
 
-describe('AuthContext', () => {
+describe("AuthContext", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useQueryClient as jest.Mock).mockReturnValue({
@@ -87,23 +88,23 @@ describe('AuthContext', () => {
     });
   });
 
-  it('redirects to profile setup when user has no profile data', async () => {
+  it("redirects to profile setup when user has no profile data", async () => {
     // Mock successful login
     (useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
       mutateAsync: jest.fn().mockResolvedValue({
         user: {
-          id: 'test-user-id',
-          email: 'test@example.com'
+          id: "test-user-id",
+          email: "test@example.com",
         },
         session: {
-          access_token: 'test-token'
-        }
+          access_token: "test-token",
+        },
       }),
       isLoading: false,
       isError: false,
       isSuccess: true,
-      error: null
+      error: null,
     });
 
     // Mock profile check to return false (no profile data)
@@ -111,7 +112,7 @@ describe('AuthContext', () => {
 
     // Mock session data
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
+      data: { session: { user: { id: "test-user-id" } } },
       error: null,
     });
 
@@ -126,35 +127,34 @@ describe('AuthContext', () => {
 
     // Wait for the navigation to occur
     await waitFor(() => {
-      expectNavigation('/(onboard)/profile');
+      expectNavigation("/(onboard)/profile");
     });
 
     // Verify that the onboarding step was set correctly
     await waitFor(() => {
-      expect(authUtils.checkProfileStatus).toHaveBeenCalledWith('test-user-id');
-      // expectAuthStatus('profile', 'test-user-id');
+      expectAuthStatus('profile', 'test-user-id');
     });
 
     unmount();
   });
 
-  it('redirects to role setup when user HAS profile & no role data', async () => {
+  it("redirects to role setup when user HAS profile & no role data", async () => {
     // Mock successful login
     (useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
       mutateAsync: jest.fn().mockResolvedValue({
         user: {
-          id: 'test-user-id',
-          email: 'test@example.com'
+          id: "test-user-id",
+          email: "test@example.com",
         },
         session: {
-          access_token: 'test-token'
-        }
+          access_token: "test-token",
+        },
       }),
       isLoading: false,
       isError: false,
       isSuccess: true,
-      error: null
+      error: null,
     });
 
     // Mock profile check to return false (no profile data)
@@ -162,7 +162,7 @@ describe('AuthContext', () => {
 
     // Mock session data
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
+      data: { session: { user: { id: "test-user-id" } } },
       error: null,
     });
 
@@ -177,45 +177,43 @@ describe('AuthContext', () => {
 
     // Wait for the navigation to occur
     await waitFor(() => {
-      expectNavigation('/(onboard)/role');
+      expectNavigation("/(onboard)/role");
     });
 
     // Verify that the onboarding step was set correctly
     await waitFor(() => {
-      expect(authUtils.checkRoleStatus).toHaveBeenCalledWith('test-user-id');
-      // expectAuthStatus('role', 'test-user-id');
+      expectAuthStatus('role', 'test-user-id');
     });
 
     unmount();
   });
 
-  it('redirects to assessment setup when user HAS profile & role, but no assessment data', async () => {
+  it("redirects to assessment setup when user HAS profile & role, but no assessment data", async () => {
     // Mock successful login
     (useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
       mutateAsync: jest.fn().mockResolvedValue({
         user: {
-          id: 'test-user-id',
-          email: 'test@example.com'
+          id: "test-user-id",
+          email: "test@example.com",
         },
         session: {
-          access_token: 'test-token'
-        }
+          access_token: "test-token",
+        },
       }),
       isLoading: false,
       isError: false,
       isSuccess: true,
-      error: null
+      error: null,
     });
 
     // Mock profile and role to return true
     (authUtils.checkProfileStatus as jest.Mock).mockResolvedValue(true);
     (authUtils.checkRoleStatus as jest.Mock).mockResolvedValue(true);
 
-
     // Mock session data
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
+      data: { session: { user: { id: "test-user-id" } } },
       error: null,
     });
 
@@ -230,35 +228,37 @@ describe('AuthContext', () => {
 
     // Wait for the navigation to occur
     await waitFor(() => {
-      expectNavigation('/(onboard)/assessment');
+      expectNavigation("/(onboard)/assessment");
     });
 
     // Verify that the onboarding step was set correctly
     await waitFor(() => {
-      expect(authUtils.checkAssessmentStatus).toHaveBeenCalledWith('test-user-id');
-      // expectAuthStatus('role', 'test-user-id');
+      expect(authUtils.checkAssessmentStatus).toHaveBeenCalledWith(
+        "test-user-id"
+      );
+      expectAuthStatus('assessment', 'test-user-id');
     });
 
     unmount();
   });
 
-  it('handles successful login', async () => {
+  it("handles successful login", async () => {
     // Mock successful login
     (useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
       mutateAsync: jest.fn().mockResolvedValue({
         user: {
-          id: 'test-user-id',
-          email: 'test@example.com'
+          id: "test-user-id",
+          email: "test@example.com",
         },
         session: {
-          access_token: 'test-token'
-        }
+          access_token: "test-token",
+        },
       }),
       isLoading: false,
       isError: false,
       isSuccess: true,
-      error: null
+      error: null,
     });
 
     // Mock profile and role to return true
@@ -266,10 +266,9 @@ describe('AuthContext', () => {
     (authUtils.checkRoleStatus as jest.Mock).mockResolvedValue(true);
     (authUtils.checkAssessmentStatus as jest.Mock).mockResolvedValue(true);
 
-
     // Mock session data
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
+      data: { session: { user: { id: "test-user-id" } } },
       error: null,
     });
 
@@ -284,23 +283,62 @@ describe('AuthContext', () => {
 
     // Wait for the navigation to occur
     await waitFor(() => {
-      expectNavigation('/(app)/home');
+      expectNavigation("/(app)/home");
     });
-
 
     unmount();
   });
 
-  it('handles login error', async () => {
+  it("handles sign out error", async () => {
     // Override for error case
     (useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
-      mutateAsync: jest.fn().mockRejectedValue(new Error('Login failed')),
+      mutateAsync: jest.fn().mockRejectedValue(new Error("Sign out failed")),
       isLoading: false,
       isError: true,
       isSuccess: false,
-      error: new Error('Login failed')
-    })
+      error: new Error("Sign out failed"),
+    });
+
+    // Mock navigation
+    (router.replace as jest.Mock).mockImplementation(() => {});
+
+    // Render component with auth provider
+    let contextValue: any;
+    function Consumer() {
+      contextValue = useAuth();
+      return null;
+    }
+
+    render(
+      <AuthProvider>
+        <Consumer />
+      </AuthProvider>
+    );
+
+    // Attempt sign out and expect it to fail
+    await act(async () => {
+      try {
+        await contextValue.signOutMutation.mutateAsync();
+      } catch (error) {
+        if (error instanceof Error) {
+          expect(error.message).toBe("Sign out failed");
+        } else {
+          throw new Error("Expected an Error object");
+        }
+      }
+    });
+
+    // Assert error state
+    expect(contextValue.authState.isAuthenticated).toBe(false);
+    expect(contextValue.signOutMutation.isError).toBe(true);
+    
+    // Verify navigation
+    // expect(router.replace).toHaveBeenCalledWith("/(public)/auth");
+    // Wait for the navigation to occur
+    await waitFor(() => {
+      expectNavigation("/(public)/auth");
+    });
   });
 
   test("should_redirect_unauthenticated_user_to_auth_screen", async () => {
@@ -354,10 +392,12 @@ describe('AuthContext', () => {
     (authUtils.checkProfileStatus as jest.Mock).mockResolvedValue(true);
     (authUtils.checkRoleStatus as jest.Mock).mockResolvedValue(true);
     (authUtils.checkAssessmentStatus as jest.Mock).mockResolvedValue(true);
-  
+
     // 2. Create a mock mutateAsync function that will throw an error
-    const mockMutateAsync = jest.fn().mockRejectedValue(new Error("sign out failed"));
-    
+    const mockMutateAsync = jest
+      .fn()
+      .mockRejectedValue(new Error("sign out failed"));
+
     // 3. Override the useMutation mock for this specific test
     (useMutation as jest.Mock).mockImplementation((options) => ({
       mutate: jest.fn(),
@@ -365,34 +405,34 @@ describe('AuthContext', () => {
       isLoading: false,
       isError: false,
       isSuccess: false,
-      error: null
+      error: null,
     }));
-    
+
     // 4. Setup the sign out error from supabase
-    (supabase.auth.signOut as jest.Mock).mockResolvedValue({ 
-      error: { message: "sign out failed" } 
+    (supabase.auth.signOut as jest.Mock).mockResolvedValue({
+      error: { message: "sign out failed" },
     });
-  
+
     // 5. Get access to context through your TestComponent
     let contextValue: any;
     const TestComponentWithContext = () => {
       contextValue = useAuth();
       return <TestComponent />;
     };
-  
+
     // 6. Render the component
     const { unmount } = render(
       <AuthProvider>
         <TestComponentWithContext />
       </AuthProvider>
     );
-  
+
     // 7. Wait for initial auth state to be ready (authenticated)
     await waitFor(() => {
       expect(contextValue.authState.session).not.toBeNull();
       expect(contextValue.authState.isAuthenticated).toBe(true);
     });
-  
+
     // 8. Trigger the sign out function that will fail
     await act(async () => {
       try {
@@ -401,22 +441,22 @@ describe('AuthContext', () => {
         // We expect an error, so just continue
       }
     });
-  
+
     // Verify the mutation was called
     expect(mockMutateAsync).toHaveBeenCalled();
-  
+
     // 9. Verify sign out error handling behavior
     await waitFor(() => {
       // Should navigate to auth screen
-      expectNavigation('/(public)/auth');
-      
+      expectNavigation("/(public)/auth");
+
       // Auth state should be reset regardless of the error
       expect(contextValue.authState.session).toBeNull();
       expect(contextValue.authState.user).toBeNull();
       expect(contextValue.authState.isAuthenticated).toBe(false);
       expect(contextValue.authState.isLoading).toBe(false);
     });
-  
+
     unmount();
-  })
-})
+  });
+});

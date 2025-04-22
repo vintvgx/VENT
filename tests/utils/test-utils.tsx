@@ -2,7 +2,6 @@ import { screen, fireEvent } from "@testing-library/react-native";
 import { router } from "expo-router";
 import * as authUtils from "@/utils/auth/function";
 
-
 /**
  * Mocking the router
  */
@@ -108,11 +107,10 @@ export const expectNavigation = (route: string) => {
  * Mocking the auth utils
  */
 jest.mock("@/utils/auth/function", () => ({
-    checkProfileStatus: jest.fn(),
-    checkRoleStatus: jest.fn(),
-    checkAssessmentStatus: jest.fn(),
-  }));
-  
+  checkProfileStatus: jest.fn(),
+  checkRoleStatus: jest.fn(),
+  checkAssessmentStatus: jest.fn(),
+}));
 
 /**
  * Expects the auth status to be called with the given userID
@@ -120,17 +118,19 @@ jest.mock("@/utils/auth/function", () => ({
  * @param userID - The userID to expect
  */
 export const expectAuthStatus = (status: string, userID: string) => {
-    var checkStatus = null 
-    switch (status) {
-        case 'profile':
-            checkStatus = authUtils.checkProfileStatus(userID)
-        case 'role':
-            checkStatus = authUtils.checkRoleStatus(userID)
-        case 'assessment':
-            checkStatus = authUtils.checkAssessmentStatus(userID)
-    }
-    expect(checkStatus).toHaveBeenCalledWith(userID)
-}
+  var checkStatus = null;
+  switch (status) {
+    case "profile":
+      expect(authUtils.checkProfileStatus).toHaveBeenCalledWith(userID);
+      break;
+    case "role":
+      expect(authUtils.checkRoleStatus).toHaveBeenCalledWith(userID);
+      break;
+    case "assessment":
+      expect(authUtils.checkAssessmentStatus).toHaveBeenCalledWith(userID);
+      break;
+  }
+};
 
 /**
  * Supabase Utilities

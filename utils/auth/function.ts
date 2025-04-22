@@ -2,14 +2,14 @@ import { supabase } from "@/lib/supabase/supabase";
 import { AuthState } from "@/types/auth";
 import { UserMetaData, UserType } from "@/types/user/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { nanoid } from "nanoid";
+import { nanoid } from "nanoid";
 
 /**
  * Generate a unique username
  * TODO Delete / user name is updated within user name
  */
 const generateUsername = () => {
-  return "new_user"// `user_${nanoid(8)}`;
+  return `user_${nanoid(8)}`;
 };
 
 /**
