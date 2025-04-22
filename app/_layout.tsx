@@ -1,10 +1,17 @@
+import { useShowToast } from "@/components/ui/toast/useToast";
 import { AuthProvider, useAuth } from "@/context/auth/AuthContext";
 import "@/global.css";
+import { ToastService } from "@/services/ToastService";
+import { ToastProvider } from "@gluestack-ui/toast";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import {
+  QueryClient,
+  QueryClientProvider
+} from '@tanstack/react-query';
 import { useFonts } from "expo-font";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -14,16 +21,6 @@ import { useColorScheme } from "react-native";
 import "react-native-reanimated";
 import { GluestackUIProvider } from "../components/ui/gluestack-ui-provider";
 import LoadingScreen from "./components/LoadingScreen";
-import { ToastProvider } from "@gluestack-ui/toast";
-import { useShowToast } from "@/components/ui/toast/useToast";
-import { ToastService } from "@/services/ToastService";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
