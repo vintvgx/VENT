@@ -118,7 +118,6 @@ jest.mock("@/utils/auth/function", () => ({
  * @param userID - The userID to expect
  */
 export const expectAuthStatus = (status: string, userID: string) => {
-  var checkStatus = null;
   switch (status) {
     case "profile":
       expect(authUtils.checkProfileStatus).toHaveBeenCalledWith(userID);
