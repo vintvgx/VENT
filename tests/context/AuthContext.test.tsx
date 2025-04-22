@@ -71,10 +71,10 @@ function TestComponent() {
     useAuth();
   return (
     <>
-      <>{JSON.stringify(authState)}</>
-      <>{typeof signOutMutation === "object" ? "mutation" : ""}</>
-      <>{typeof refreshSession === "function" ? "refresh" : ""}</>
-      <>{typeof setOnboardingStep === "function" ? "setOnboarding" : ""}</>
+      {JSON.stringify(authState)}
+      {typeof signOutMutation === "object" ? "mutation" : ""}
+      {typeof refreshSession === "function" ? "refresh" : ""}
+      {typeof setOnboardingStep === "function" ? "setOnboarding" : ""}
     </>
   );
 }
@@ -132,7 +132,7 @@ describe("AuthContext", () => {
 
     // Verify that the onboarding step was set correctly
     await waitFor(() => {
-      expectAuthStatus('profile', 'test-user-id');
+      expectAuthStatus("profile", "test-user-id");
     });
 
     unmount();
@@ -182,7 +182,7 @@ describe("AuthContext", () => {
 
     // Verify that the onboarding step was set correctly
     await waitFor(() => {
-      expectAuthStatus('role', 'test-user-id');
+      expectAuthStatus("role", "test-user-id");
     });
 
     unmount();
@@ -236,7 +236,7 @@ describe("AuthContext", () => {
       expect(authUtils.checkAssessmentStatus).toHaveBeenCalledWith(
         "test-user-id"
       );
-      expectAuthStatus('assessment', 'test-user-id');
+      expectAuthStatus("assessment", "test-user-id");
     });
 
     unmount();
@@ -332,16 +332,12 @@ describe("AuthContext", () => {
     // Assert error state
     expect(contextValue.authState.isAuthenticated).toBe(false);
     expect(contextValue.signOutMutation.isError).toBe(true);
-    
+
     // Verify navigation
-    // expect(router.replace).toHaveBeenCalledWith("/(public)/auth");
-    // Wait for the navigation to occur
-    await waitFor(() => {
-      expectNavigation("/(public)/auth");
-    });
+    expectNavigation("/(public)/auth");
   });
 
-  test("should_redirect_unauthenticated_user_to_auth_screen", async () => {
+  it("redirects unauthenticated user to auth screen", async () => {
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
       data: { session: null },
       error: null,
@@ -353,14 +349,12 @@ describe("AuthContext", () => {
       </AuthProvider>
     );
 
-    await waitFor(() => {
-      expectNavigation("/(public)/auth");
-    });
+    expectNavigation("/(public)/auth");
 
     unmount();
   });
 
-  test("should_navigate_user_to_correct_onboarding_step", async () => {
+  it("navigates user to correct onboarding step", async () => {
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
       data: { session: { user: { id: "user2" } } },
       error: null,
@@ -379,10 +373,12 @@ describe("AuthContext", () => {
       expect(router.replace).toHaveBeenCalledWith(`/(onboard)/role`);
     });
 
+    expectNavigation("/(onboard)/role");
+
     unmount();
   });
 
-  test("should_maintain_consistent_state_on_sign_out_error", async () => {
+  it("maintains consistent state on sign out error", async () => {
     // 1. Setup mocks for a successful initial authentication
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
       data: { session: { user: { id: "test_user" } } },

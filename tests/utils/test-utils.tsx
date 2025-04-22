@@ -1,4 +1,4 @@
-import { screen, fireEvent } from "@testing-library/react-native";
+import { screen, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import * as authUtils from "@/utils/auth/function";
 
@@ -99,8 +99,10 @@ export const expectErrorMessage = (message: string) => {
  * Mocks the router navigation
  * @param route - The route to navigate to
  */
-export const expectNavigation = (route: string) => {
+export const expectNavigation = async (route: string) => {
+  await waitFor(() => {
   expect(router.replace).toHaveBeenCalledWith(route);
+  })
 };
 
 /**
