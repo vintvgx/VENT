@@ -51,7 +51,7 @@ export const expectButtonDisabled = (
 ) => {
   const button = screen.getByText(text);
   expect(button).toBeTruthy();
-  expect(button.props.disabled).toBe(disabled);
+  expect(button.props.accessibilityState.disabled).toBe(disabled);
 };
 
 /**

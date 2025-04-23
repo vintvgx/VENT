@@ -23,7 +23,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { supabase } from "@/lib/supabase/supabase";
 import { useAuth } from "@/context/auth/AuthContext";
 import { OnboardingStep } from "@/types/auth";
-import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
+import { TOAST, useShowToast } from "@/components/ui/t\oast/useToast";
 import { Calendar, Check } from "lucide-react-native";
 import React from "react";
 import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile";

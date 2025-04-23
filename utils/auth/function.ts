@@ -230,6 +230,7 @@ export const checkProfileStatus = async (userId: string | undefined) => {
   }
 };
 
+
 /**
  * Checks if the user has completed the assessment
  * @param userId the user's id
