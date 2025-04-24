@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/supabase";
 import { ToastService } from "@/services/ToastService";
-import { AssessmentResponse } from "@/types/user/onboard";
+import { AssessmentResponse } from "@/types/user/onboardModel";
 import { useAuth } from "@/context/auth/AuthContext";
 
 /**

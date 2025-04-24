@@ -1,6 +1,7 @@
 import { screen, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import * as authUtils from "@/utils/auth/function";
+import { QueryClient } from "@tanstack/react-query";
 
 /**
  * Mocking the router
@@ -51,7 +52,7 @@ export const expectButtonDisabled = (
 ) => {
   const button = screen.getByText(text);
   expect(button).toBeTruthy();
-  expect(button.props.disabled).toBe(disabled);
+  expect(button.props.accessibilityState.disabled).toBe(disabled);
 };
 
 /**
@@ -178,3 +179,47 @@ export const mockMutation = (options: {
     error: options.error ?? null,
   });
 };
+
+/**
+ * Selects a date of birth in the date picker
+ * @param year - The year of the date
+ * @param month - The month of the date
+ * @param day - The day of the date
+ */
+export const selectDateOfBirth = async (year: number, month: number, day: number) => {
+  // Find and click the date input to open the picker
+  const dateInput = screen.getByText("Select your date of birth");
+  fireEvent.press(dateInput);
+
+  // Wait for the modal to appear
+  await waitFor(() => {
+    expect(screen.getByText("Select Date of Birth")).toBeTruthy();
+  });
+
+  // Select year
+  const yearButton = screen.getByText(year.toString());
+  fireEvent.press(yearButton);
+
+  // Select month (months are 0-indexed in JavaScript)
+  const monthButton = screen.getByText(
+    new Date(2000, month, 1).toLocaleString("default", { month: "long" })
+  );
+  fireEvent.press(monthButton);
+
+  // Select day
+  const dayButton = screen.getByText(day.toString());
+  fireEvent.press(dayButton);
+
+  // Confirm the selection
+  const confirmButton = screen.getByText("Confirm");
+  fireEvent.press(confirmButton);
+};
+
+/**
+ * Mocking the query client
+ */
+export const mockQueryClient = {
+  invalidateQueries: jest.fn(),
+  clear: jest.fn(),
+  // Add any other methods you actually use in your code
+} as unknown as QueryClient;  // Type cast to QueryClient

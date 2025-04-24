@@ -42,3 +42,5 @@ git init
 
 project_structure.md
 .qodo
+
+coverage/

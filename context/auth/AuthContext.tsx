@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let retries = 3;
         let success = false;
         let sessionData = null;
-        
+
         while (retries > 0 && !success) {
           // Get current session
           const {
@@ -48,10 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } = await supabase.auth.getSession();
 
           if (error) {
-            if (error.message?.includes('network') && retries > 1) {
-              console.log(`Network error, retrying... (${retries-1} attempts left)`);
+            if (error.message?.includes("network") && retries > 1) {
+              console.log(
+                `Network error, retrying... (${retries - 1} attempts left)`
+              );
               retries--;
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 1000));
               continue;
             }
             console.error("Error getting initial session:", error);
@@ -62,11 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }));
             return;
           }
-          
+
           success = true;
           sessionData = session;
         }
-        
+
         if (sessionData) {
           // Process the session and update state
           await handleSessionChange(sessionData);
@@ -108,10 +110,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({
           queryKey: ["assessments", session.user.id],
         });
-
       } else {
-        queryClient.invalidateQueries({ queryKey: ["profile", session?.user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["assessments", session?.user?.id]});
+        queryClient.invalidateQueries({
+          queryKey: ["profile", session?.user?.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["assessments", session?.user?.id],
+        });
       }
     });
 
@@ -124,39 +129,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [queryClient]);
 
-    // Handle navigation based on auth and onboarding state
-    useEffect(() => {
-      console.log("Handling navigation based on auth and onboarding state");
-      if (authState.isLoading) return;
-  
-      if (isInitialized) {
-        // Not authenticated
-        if (!authState.session) {
-          router.replace("/(public)/auth");
-          return;
-        }
-  
-        // Authenticated but in onboarding
-        if (
-          authState.onboardingStep &&
-          authState.onboardingStep !== OnboardingStep.COMPLETED
-        ) {
-          //@ts-ignore
-          router.replace(`/(onboard)/${authState.onboardingStep}`);
-          return;
-        }
-  
-        // Fully authenticated and onboarded
-        if (
-          authState.isAuthenticated &&
-          authState.session &&
-          (!authState.onboardingStep ||
-            authState.onboardingStep === OnboardingStep.COMPLETED)
-        ) {
-          router.replace("/(app)/home");
-        }
+  // Handle navigation based on auth and onboarding state
+  useEffect(() => {
+    console.log("Handling navigation based on auth and onboarding state");
+    if (authState.isLoading) return;
+
+    if (isInitialized) {
+      // Not authenticated
+      if (!authState.session) {
+        router.replace("/(public)/auth");
+        return;
       }
-    }, [authState, isInitialized]);
+
+      // Authenticated but in onboarding
+      if (
+        authState.onboardingStep &&
+        authState.onboardingStep !== OnboardingStep.COMPLETED
+      ) {
+        //@ts-ignore
+        router.replace(`/(onboard)/${authState.onboardingStep}`);
+        return;
+      }
+
+      // Fully authenticated and onboarded
+      if (
+        authState.isAuthenticated &&
+        authState.session &&
+        (!authState.onboardingStep ||
+          authState.onboardingStep === OnboardingStep.COMPLETED)
+      ) {
+        router.replace("/(app)/home");
+      }
+    }
+  }, [authState, isInitialized]);
 
   /**
    * Mutation for signing out the user
@@ -216,12 +221,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data?.session) {
+      console.log("Refreshing session", data.session);
       await handleSessionChange(data.session);
     } else {
+      console.log("No session data");
       setAuthState((prev) => ({
         ...prev,
         session: null,
-        user: null,        
+        user: null,
         isLoading: false,
         isAuthenticated: false,
       }));
@@ -241,53 +248,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const determineOnboardingStep = async (userId: string | undefined) => {
     try {
-      // First check stored step in AsyncStorage
-      const storedStep = await AsyncStorage.getItem("onboardingStep");
-      logDebug("AsyncStorage last stored step:", storedStep);
+      logDebug("Determining onboarding step for user:", userId);
 
-      if (storedStep) {
-        setAuthState((prev) => ({
-          ...prev,
-          onboardingStep: storedStep as OnboardingStep,
-        }));
-        return;
-      }
-
-      // If no stored step, check user's progress
-      // Check if user has selected a role
-      const hasProfile = await checkProfileStatus(userId);
-      if (!hasProfile) {
-        logDebug("User has not set their profile")
-        setAuthState((prev) => ({
-          ...prev,
-          onboardingStep: OnboardingStep.PROFILE,
-        }));
-        return;
-      }
-
-      const hasSelectedRole = await checkRoleStatus(userId);
-      if (!hasSelectedRole) {
-        logDebug("User has not set their role")
-        setOnboardingStep(OnboardingStep.ROLE);
-        return;
-      }
-
+      // First check if user has completed the assessment (which would conclude the onboarding has been completed)
       const hasCompletedAssessment = await checkAssessmentStatus(userId);
-      if (!hasCompletedAssessment) {
-        logDebug("User has not completed their assessment")
+      if (hasCompletedAssessment) {
+        logDebug("User has completed the onboard process");
         setAuthState((prev) => ({
           ...prev,
-          onboardingStep: OnboardingStep.ASSESSMENT,
+          onboardingStep: OnboardingStep.COMPLETED,
         }));
         return;
       }
 
-      // User has completed all steps
-      setAuthState((prev) => ({
-        ...prev,
-        onboardingStep: OnboardingStep.COMPLETED,
-      }));
-      await AsyncStorage.removeItem("onboardingStep");
+      if (!hasCompletedAssessment) {
+        // Check user's progress
+
+        // Check if user has completed setting up their profile
+        const hasProfile = await checkProfileStatus(userId);
+        if (!hasProfile) {
+          logDebug("User has not set their profile");
+          setAuthState((prev) => ({
+            ...prev,
+            onboardingStep: OnboardingStep.PROFILE,
+          }));
+          return;
+        }
+
+        // Check if user has selected a role
+        const hasSelectedRole = await checkRoleStatus(userId);
+        if (!hasSelectedRole) {
+          logDebug("User has not set their role");
+          setOnboardingStep(OnboardingStep.ROLE);
+          return;
+        }
+
+        // User has completed all steps
+        setAuthState((prev) => ({
+          ...prev,
+          onboardingStep: OnboardingStep.COMPLETED,
+        }));
+        await AsyncStorage.removeItem("onboardingStep");
+      }
     } catch (error) {
       console.error("Error determining onboarding step:", error);
       // In case of error, set a default

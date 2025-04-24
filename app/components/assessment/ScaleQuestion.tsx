@@ -4,7 +4,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { AssessmentQuestion } from '@/types/user/onboard';
+import { AssessmentQuestion } from '@/types/user/onboardModel';
 
 interface ScaleQuestionProps {
   question: AssessmentQuestion;
