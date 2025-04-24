@@ -1,4 +1,4 @@
-import { AssessmentQuestion, QuestionType } from "@/types/user/onboard";
+import { AssessmentQuestion, QuestionType } from "@/types/user/onboardModel";
 import { UserType } from "@/types/user/user";
 
 // Define assessment questions for hosts

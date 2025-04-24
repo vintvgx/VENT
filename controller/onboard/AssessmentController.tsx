@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/supabase";
 import { ToastService } from "@/services/ToastService";
-import { AssessmentQuestion, QuestionType } from "@/types/user/onboard";
+import { AssessmentQuestion, QuestionType } from "@/types/user/onboardModel";
 import { User } from "@supabase/supabase-js";
 
 export class AssessmentController {

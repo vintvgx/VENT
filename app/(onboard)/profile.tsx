@@ -26,7 +26,7 @@ import { OnboardingStep } from "@/types/auth";
 import { TOAST, useShowToast } from "@/components/ui/t\oast/useToast";
 import { Calendar, Check } from "lucide-react-native";
 import React from "react";
-import { ProfileStep, STORAGE_KEYS } from "@/types/user/profile";
+import { ProfileStep, STORAGE_KEYS } from "@/types/user/profileModel";
 import { ProfileController } from "@/controller/onboard/ProfileController";
 import { useQueryClient } from "@tanstack/react-query";
 

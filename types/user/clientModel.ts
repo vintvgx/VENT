@@ -66,36 +66,36 @@ export interface ClientUser extends Omit<UserModel, 'profile'> {
 /**
  * Factory function to create a basic client user
  */
-export function createClientUser(input: NewUserInput, user: User): ClientUser {
-    return {
-      user,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      username: input.username,
-      dob: input.dob,
-      isAnonymous: input.isAnonymous || false,
-      profileCompletionPercentage: 20, // Basic info only
-      userType: UserType.CLIENT,
-      createdAt: new Date(),
-      lastActiveAt: new Date(),
-      profile: {
-        role: UserType.CLIENT,
-        topicsOfInterest: [],
-        experience: [],
-        preferredCommunicationStyle: '',
-        primarySupportNeeds: [],
-        supportIntensityPreference: 'moderate',
-        privacyPreferences: {
-          shareRealName: false,
-          shareJourneyWithHost: false
-        }
-      },
-      onboardSelections: {
-        areasOfSupport: [],
-        shortTermGoals: [],
-        longTermGoals: [],
-        previousSupport: [],
-        currentSupportNeeds: ''
-      }
-    };
-  }
+// export function createClientUser(input: NewUserInput, user: User): ClientUser {
+//     return {
+//       user,
+//       firstName: input.firstName,
+//       lastName: input.lastName,
+//       username: input.username,
+//       dob: input.dob,
+//       isAnonymous: input.isAnonymous || false,
+//       profileCompletionPercentage: 20, // Basic info only
+//       userType: UserType.CLIENT,
+//       createdAt: new Date(),
+//       lastActiveAt: new Date(),
+//       profile: {
+//         role: UserType.CLIENT,
+//         topicsOfInterest: [],
+//         experience: [],
+//         preferredCommunicationStyle: '',
+//         primarySupportNeeds: [],
+//         supportIntensityPreference: 'moderate',
+//         privacyPreferences: {
+//           shareRealName: false,
+//           shareJourneyWithHost: false
+//         }
+//       },
+//       onboardSelections: {
+//         areasOfSupport: [],
+//         shortTermGoals: [],
+//         longTermGoals: [],
+//         previousSupport: [],
+//         currentSupportNeeds: ''
+//       }
+//     };
+//   }

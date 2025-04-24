@@ -1,5 +1,5 @@
 // components/onboarding/questions/TextQuestion.tsx
-import { AssessmentQuestion } from '@/types/user/onboard';
+import { AssessmentQuestion } from '@/types/user/onboardModel';
 import React from 'react';
 import { View, StyleSheet, TextInput } from 'react-native';
 
