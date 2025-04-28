@@ -74,3 +74,4 @@ expo start --dev-client
 4/17 SINNERS
 4/19 tanstack query implementation
 4/25 peace
+4/27 UI
