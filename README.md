@@ -75,3 +75,4 @@ expo start --dev-client
 4/19 tanstack query implementation
 4/25 peace
 4/27 UI
+4/28 Day off
