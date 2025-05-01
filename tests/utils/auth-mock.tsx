@@ -18,6 +18,8 @@ const defaultMockAuth: AuthContextType = {
 // Current mock values that will be used
 export let mockAuth = { ...defaultMockAuth };
 
+export let mockAuthenticatedAuth = { ...defaultMockAuth, authState: { ...defaultMockAuth.authState, isAuthenticated: true } };
+
 // Reset the mock to defaults
 export const resetAuthMock = () => {
   mockAuth = { ...defaultMockAuth };
