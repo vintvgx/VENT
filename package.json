@@ -1,7 +1,7 @@
 {
   "name": "vent",
   "main": "expo-router/entry",
-  "version": "0.0.2",
+  "version": "0.0.34",
   "scripts": {
     "start": "expo start",
     "dev": "npx expo start --dev-client",
