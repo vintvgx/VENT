@@ -78,21 +78,21 @@ export default function RootLayout() {
 function AppContent() {
   const { authState } = useAuth();
   const colorScheme = useColorScheme();
+  const themeMode = colorScheme === 'dark' ? 'dark' : 'light';
 
   if (authState.isLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <GluestackUIProvider mode="light">
-      <ToastProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          {/* Don't wrap Slot in Stack here */}
+    <GluestackUIProvider mode={colorScheme === "dark" ? 'dark' : 'light'}>
+      <ThemeProvider
+        value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <ToastProvider>
           <Slot />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </ToastProvider>
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        </ToastProvider>
+      </ThemeProvider>
     </GluestackUIProvider>
   );
 }
