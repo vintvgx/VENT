@@ -18,6 +18,14 @@ GoogleSignin.configure({
   profileImageSize: 150,
 });
 
+//TODO swtich to this configuration for next build
+// GoogleSignin.configure({
+//   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+//   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+//   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+//   profileImageSize: Number(process.env.EXPO_PUBLIC_GOOGLE_PROFILE_IMAGE_SIZE) || 150,
+// });
+
 export const signInWithGoogle = async (showToast: (type: TOAST, message: string) => void) => {
   try {
     await GoogleSignin.hasPlayServices();

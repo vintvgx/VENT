@@ -75,6 +75,9 @@ const AuthScreen = () => {
         }}
       />
 
+      {/* App Title */}
+ 
+
       {/* Main content */}
       <Animated.View 
         style={[
@@ -82,6 +85,12 @@ const AuthScreen = () => {
           { transform: [{ translateY: contentAnim }] }
         ]}
       >
+        {/* TODO Fix title display */}
+        {/* <View style={styles.titleContainer}>
+        <ThemedText type="title" style={styles.appTitle}>VENT</ThemedText>
+        <ThemedText style={styles.appTagline}>Connect • Share • Heal</ThemedText>
+      </View> */}
+
         <ThemedView style={styles.card}>
           <ThemedText type="title" style={styles.headerText}>Connect with others through shared experiences</ThemedText>
           <ThemedText type="subtitle" style={styles.subHeaderText}>A safe space for peer-to-peer support</ThemedText>
@@ -145,7 +154,8 @@ const AuthScreen = () => {
 
         <ThemedText type="title" style={styles.authTitle}>Let's get started</ThemedText>
         <ThemedText type="subtitle" style={styles.authSubtitle}>
-        Welcome to Vent—a safe space to share and connect.        </ThemedText>
+          Welcome to Vent—a safe space to share and connect.
+        </ThemedText>
 
         <View style={styles.authButtons}>
           <Button
@@ -182,6 +192,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  titleContainer: {
+    position: 'absolute',
+    top: Platform.OS === "ios" ? 60 : 40,
+    width: '100%',
+    height: '10%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    backgroundColor: 'red'
+  },
+  appTitle: {
+    fontSize: 52,
+    fontWeight: "900",
+    letterSpacing: 3,
+    textAlign: "center",
+  },
+  appTagline: {
+    fontSize: 14,
+    fontWeight: "500",
+    letterSpacing: 1,
+    opacity: 0.8,
+  },
   themeToggle: {
     position: "absolute",
     top: Platform.OS === "ios" ? 50 : 20,
@@ -194,10 +226,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    paddingTop: Platform.OS === "ios" ? 100 : 80, // Make room for the title
   },
   card: {
     width: "100%",
-    height: "90%",
+    height: "80%", // Adjusted to make room for the title
     borderRadius: 20,
     padding: 25,
     alignItems: "center",
@@ -313,17 +346,10 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   socialButton: {
-    
-    // width: "100%",
-    // height: 55,
-    // borderRadius: 30,
     backgroundColor: '#fff',
     borderWidth: 0,
     marginHorizontal: 20,
-    // justifyContent: 'flex-start',
-    // paddingLeft: 20,
     borderRadius: 20,
-    // marginHorizontal: 40,
     height: 40,
     alignContent: 'center'
   },
