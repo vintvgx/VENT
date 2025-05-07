@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { supabase } from "@/lib/supabase/supabase"
-import { OnboardingStep } from "@/types/auth"
+import { OnboardingStep } from "@/types/authModel"
 import { ProfileStep, STORAGE_KEYS } from "@/types/user/profileModel"
 
 interface SaveProfileParams {

@@ -8,7 +8,7 @@ import { useAuth } from "@/context/auth/AuthContext";
 import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { supabase } from "@/lib/supabase/supabase";
-import { OnboardingStep } from "@/types/auth";
+import { OnboardingStep } from "@/types/authModel";
 import { UserType } from "@/types/user/user";
 import { prettyJSON } from "@/utils/strings/function";
 import { MaterialIcons } from "@expo/vector-icons";

@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ThemedText";
 import { supabase } from "@/lib/supabase/supabase";
 import { useAuth } from "@/context/auth/AuthContext";
-import { OnboardingStep } from "@/types/auth";
+import { OnboardingStep } from "@/types/authModel";
 import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 import { Calendar, Check } from "lucide-react-native";
 import React from "react";

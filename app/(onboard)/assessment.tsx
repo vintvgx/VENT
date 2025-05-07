@@ -4,7 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth/AuthContext";
 import { ToastService } from "@/services/ToastService";
-import { OnboardingStep } from "@/types/auth";
+import { OnboardingStep } from "@/types/authModel";
 import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboardModel";
 import { UserType } from "@/types/user/user";
 import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";

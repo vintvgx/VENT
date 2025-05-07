@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { AuthContextType, AuthState, OnboardingStep } from '@/types/auth';
+import { AuthContextType, AuthState, OnboardingStep } from '@/types/authModel';
 import { AuthProvider } from '@/context/auth/AuthContext';
 
 // Default mock values
