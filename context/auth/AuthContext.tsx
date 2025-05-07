@@ -1,6 +1,6 @@
 // In AuthContext.tsx
 import { supabase } from "@/lib/supabase/supabase";
-import { AuthContextType, AuthState, OnboardingStep } from "@/types/auth";
+import { AuthContextType, AuthState, OnboardingStep } from "@/types/authModel";
 import {
   checkAssessmentStatus,
   checkProfileStatus,

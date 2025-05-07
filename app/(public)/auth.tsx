@@ -12,15 +12,13 @@ import {
   Dimensions,
   Platform,
   SafeAreaView,
-  StyleSheet,
   View
 } from "react-native";
 
-const { height, width } = Dimensions.get("window")
+const { height } = Dimensions.get("window")
 
 const AuthScreen = () => {
   const showToast = useShowToast();
-
   const theme = useTheme();
   //TODO Check if authGuard is needed 
   // This will redirect away if user is already authenticated
@@ -66,7 +64,7 @@ const AuthScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1">
       {/* Hide header */}
       <Stack.Screen
         options={{
@@ -75,58 +73,53 @@ const AuthScreen = () => {
         }}
       />
 
-      {/* App Title */}
- 
-
       {/* Main content */}
       <Animated.View 
-        style={[
-          styles.contentContainer,
-          { transform: [{ translateY: contentAnim }] }
-        ]}
+        className="flex-1 justify-center items-center p-5 pt-20 md:pt-16"
+        style={{ transform: [{ translateY: contentAnim }] }}
       >
         {/* TODO Fix title display */}
-        {/* <View style={styles.titleContainer}>
-        <ThemedText type="title" style={styles.appTitle}>VENT</ThemedText>
-        <ThemedText style={styles.appTagline}>Connect • Share • Heal</ThemedText>
-      </View> */}
+        {/* <View className="absolute top-[60px] ios:top-[60px] android:top-[40px] w-full h-[10%] items-center justify-center z-10 bg-red-500">
+          <ThemedText type="title" className="text-[52px] font-black tracking-[3px] text-center">VENT</ThemedText>
+          <ThemedText className="text-sm font-medium tracking-wider opacity-80">Connect • Share • Heal</ThemedText>
+        </View> */}
 
-        <ThemedView style={styles.card}>
-          <ThemedText type="title" style={styles.headerText}>Connect with others through shared experiences</ThemedText>
-          <ThemedText type="subtitle" style={styles.subHeaderText}>A safe space for peer-to-peer support</ThemedText>
+        <View className="w-full h-4/5 rounded-2xl p-6 items-center justify-center bg-sky-600">
+          <ThemedText type="title" className="text-center mb-2.5">Connect with others through shared experiences</ThemedText>
+          <ThemedText type="subtitle" className="text-center mb-8 opacity-90">A safe space for peer-to-peer support</ThemedText>
 
           {/* Card with content */}
-          <ThemedView style={styles.noteCard}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar} />
-              <View style={[styles.avatar, { marginLeft: -10 }]} />
-              <View style={[styles.avatar, { marginLeft: -10 }]} />
-              <ThemedText style={styles.shareText}>Share</ThemedText>
+          <ThemedView className="w-[90%] p-5 rounded-xl shadow-md mt-2.5 ">
+            <View className="flex-row items-center mb-2.5">
+              <View className="w-6 h-6 rounded-full bg-gray-300" />
+              <View className="w-6 h-6 rounded-full bg-gray-300 -ml-2.5" />
+              <View className="w-6 h-6 rounded-full bg-gray-300 -ml-2.5" />
+              <ThemedText className="ml-1 text-xs opacity-70">Share</ThemedText>
             </View>
 
-            <ThemedText type="defaultSemiBold" style={styles.noteTitle}>Community Support</ThemedText>
+            <ThemedText type="defaultSemiBold" className="text-[22px] mb-4">Community Support</ThemedText>
 
-            <View style={styles.bulletContainer}>
-              <ThemedText style={styles.bulletPoint}>
+            <View className="mb-4">
+              <ThemedText className="text-sm leading-[22px] mb-2">
                 • Connect with others who understand your journey
               </ThemedText>
-              <ThemedText style={styles.bulletPoint}>
+              <ThemedText className="text-sm leading-[22px] mb-2">
                 • Share experiences in a safe, supportive environment
               </ThemedText>
             </View>
 
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>Upcoming events</ThemedText>
-            <ThemedText style={styles.eventText}>
+            <ThemedText type="defaultSemiBold" className="text-base mb-1">Upcoming events</ThemedText>
+            <ThemedText className="text-sm leading-5">
               Join our weekly support circles and guided discussions
             </ThemedText>
           </ThemedView>
-        </ThemedView>
+        </View>
       </Animated.View>
 
       {/* Sign In / Sign Up button */}
       <Button
-        style={styles.signButton}
-        onPress={showAuthPanel} //TODO update to handleMobileAuth when isAuthVisible
+        className="mb-10 mx-12 rounded-2xl h-10"
+        onPress={showAuthPanel}
         accessibilityLabel="Sign up or sign in"
         action="secondary"
         variant="solid"
@@ -136,15 +129,18 @@ const AuthScreen = () => {
       </Button>
 
       <Animated.View
-        style={[
-          styles.authPanel,
-          {
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
+        className="absolute bottom-0 left-0 right-0 h-[46%] rounded-t-3xl p-5 pt-4 px-6 shadow-lg"
+        style={{
+          transform: [{ translateY: slideAnim }],
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
       >
         <Button
-          style={styles.closeButton}
+          className="self-center mb-2.5"
           onPress={hideAuthPanel}
           variant="link"
           action="default"
@@ -152,34 +148,33 @@ const AuthScreen = () => {
           <Ionicons color={theme.dark ? 'white' : 'black'} name="chevron-down" size={24} />
         </Button>
 
-        <ThemedText type="title" style={styles.authTitle}>Let's get started</ThemedText>
-        <ThemedText type="subtitle" style={styles.authSubtitle}>
+        <ThemedText type="title" className="text-[36px] font-bold text-center mb-1 text-white">Let's get started</ThemedText>
+        <ThemedText type="subtitle" className="text-base text-center mb-8 px-5 text-gray-400 w-[70%] self-center">
           Welcome to Vent—a safe space to share and connect.
         </ThemedText>
 
-        <View style={styles.authButtons}>
+        <View className="w-full gap-4">
           <Button
-            style={styles.socialButton}
+            className="bg-white border-0 mx-5 rounded-2xl h-10 items-center"
             accessibilityLabel="Continue with Google"
             action="primary"
             variant="outline"
             onPress={() => signInWithGoogle(showToast)}
           >
             <Ionicons name="logo-google" size={24} color="#4285F4" />
-            <ButtonText variant="solid" style={styles.buttonText}>Continue with Google</ButtonText>
+            <ButtonText variant="solid" className="ml-2.5 text-base">Continue with Google</ButtonText>
           </Button>
 
           <Button
-            style={styles.socialButton}
+            className="bg-white border-0 mx-5 rounded-2xl h-10 items-center"
             accessibilityLabel="Continue with Apple"
             action="primary"
             variant="outline"
             onPress={() => signInWithApple(showToast)} 
           >
             <Ionicons name="logo-apple" size={24} color="#000" />
-            <ButtonText variant="solid" style={styles.buttonText}>Continue with Apple</ButtonText>
+            <ButtonText variant="solid" className="ml-2.5 text-base">Continue with Apple</ButtonText>
           </Button>
-
         </View>
       </Animated.View>
     </SafeAreaView>
@@ -187,174 +182,3 @@ const AuthScreen = () => {
 };
 
 export default AuthScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  titleContainer: {
-    position: 'absolute',
-    top: Platform.OS === "ios" ? 60 : 40,
-    width: '100%',
-    height: '10%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    backgroundColor: 'red'
-  },
-  appTitle: {
-    fontSize: 52,
-    fontWeight: "900",
-    letterSpacing: 3,
-    textAlign: "center",
-  },
-  appTagline: {
-    fontSize: 14,
-    fontWeight: "500",
-    letterSpacing: 1,
-    opacity: 0.8,
-  },
-  themeToggle: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 50 : 20,
-    right: 20,
-    zIndex: 10,
-    padding: 8,
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    paddingTop: Platform.OS === "ios" ? 100 : 80, // Make room for the title
-  },
-  card: {
-    width: "100%",
-    height: "80%", // Adjusted to make room for the title
-    borderRadius: 20,
-    padding: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: '#6a8caf'
-  },
-  headerText: {
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  subHeaderText: {
-    textAlign: "center",
-    marginBottom: 30,
-    opacity: 0.9,
-  },
-  noteCard: {
-    width: "90%",
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginTop: 10
-  },
-  avatarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#ccc",
-  },
-  shareText: {
-    marginLeft: 5,
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  noteTitle: {
-    fontSize: 22,
-    marginBottom: 15,
-  },
-  bulletContainer: {
-    marginBottom: 15,
-  },
-  bulletPoint: {
-    fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  eventText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  signButton: {
-    marginBottom: 40,
-    borderRadius: 20,
-    marginHorizontal: 45,
-    height: 40,
-  },
-  signButtonText: {
-    marginLeft: 8,
-  },
-  authPanel: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "46%",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 20,
-    paddingTop: 15,
-    paddingHorizontal: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    // backgroundColor: '#222',
-  },
-  closeButton: {
-    alignSelf: "center",
-    marginBottom: 10,
-  },
-  authTitle: {
-    fontSize: 36,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 5,
-    color: '#fff',
-  },
-  authSubtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 35,
-    paddingHorizontal: 20,
-    color: '#aaa',
-    width: '70%',
-    alignSelf: 'center'
-  },
-  authButtons: {
-    width: "100%",
-    // alignItems: "center",
-    gap: 15,
-  },
-  socialButton: {
-    backgroundColor: '#fff',
-    borderWidth: 0,
-    marginHorizontal: 20,
-    borderRadius: 20,
-    height: 40,
-    alignContent: 'center'
-  },
-  buttonText: {
-    marginLeft: 10,
-    fontSize: 16,
-  }
-});

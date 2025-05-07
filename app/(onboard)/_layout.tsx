@@ -15,7 +15,7 @@ import {
 import { ThemedView } from "@/components/ThemedView"
 import { ThemedText } from "@/components/ThemedText"
 import { useAuth } from "@/context/auth/AuthContext"
-import { OnboardingStep } from "@/types/auth"
+import { OnboardingStep } from "@/types/authModel"
 import { LogOut } from "lucide-react-native"
 import { useEffect, useRef } from "react"
 
