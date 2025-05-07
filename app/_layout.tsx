@@ -38,7 +38,6 @@ export default function RootLayout() {
 
   const showToast = useShowToast();
 
-  const colorScheme = useColorScheme();
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -78,14 +77,13 @@ export default function RootLayout() {
 function AppContent() {
   const { authState } = useAuth();
   const colorScheme = useColorScheme();
-  const themeMode = colorScheme === 'dark' ? 'dark' : 'light';
 
   if (authState.isLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <GluestackUIProvider mode={colorScheme === "dark" ? 'dark' : 'light'}>
+    <GluestackUIProvider mode={colorScheme === "dark" ? 'light' : 'light'}>
       <ThemeProvider
         value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <ToastProvider>

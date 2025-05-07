@@ -1,13 +1,13 @@
 {
   "name": "vent",
   "main": "expo-router/entry",
-  "version": "0.0.34",
+  "version": "0.0.36",
   "scripts": {
     "start": "expo start",
     "dev": "npx expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "DARK_MODE=media expo start --android",
-    "ios": "DARK_MODE=media expo start --ios",
+    "ios": "expo start --ios",
     "web": "DARK_MODE=media expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
