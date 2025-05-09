@@ -35,11 +35,17 @@ export default function OnboardingLayout() {
         case OnboardingStep.PROFILE:
           stepValue = 1
           break
-        case OnboardingStep.ROLE:
+        case OnboardingStep.USERNAME:
           stepValue = 2
           break
-        case OnboardingStep.ASSESSMENT:
+        case OnboardingStep.MOBILE:
           stepValue = 3
+          break 
+        case OnboardingStep.ROLE:
+          stepValue = 4
+          break
+        case OnboardingStep.ASSESSMENT:
+          stepValue = 5
           break
       }
 
@@ -74,15 +80,19 @@ export default function OnboardingLayout() {
   }
 
   // Create progress tracker based on current step
-  const totalSteps = 3 // Role, Profile and Assessment
+  const totalSteps = 5 // Role, Profile and Assessment
   const currentStep = (() => {
     switch (authState.onboardingStep) {
       case OnboardingStep.PROFILE:
         return 1
-      case OnboardingStep.ROLE:
+      case OnboardingStep.USERNAME:
         return 2
-      case OnboardingStep.ASSESSMENT:
+      case OnboardingStep.MOBILE:
         return 3
+      case OnboardingStep.ROLE:
+        return 4
+      case OnboardingStep.ASSESSMENT:
+        return 5
       default:
         return 1
     }
@@ -93,6 +103,10 @@ export default function OnboardingLayout() {
     switch (authState.onboardingStep) {
       case OnboardingStep.PROFILE:
         return "Profile Setup"
+      case OnboardingStep.USERNAME:
+        return "Set Username"
+      case OnboardingStep.MOBILE:
+        return "Set Mobile Number"
       case OnboardingStep.ROLE:
         return "Role Selection"
       case OnboardingStep.ASSESSMENT:
