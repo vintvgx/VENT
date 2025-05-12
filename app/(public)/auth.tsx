@@ -6,13 +6,14 @@ import { signInWithApple, signInWithGoogle } from "@/utils/auth/function";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
   Platform,
   SafeAreaView,
-  View
+  View,
+  useColorScheme
 } from "react-native";
 
 const { height } = Dimensions.get("window")
@@ -20,6 +21,12 @@ const { height } = Dimensions.get("window")
 const AuthScreen = () => {
   const showToast = useShowToast();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    console.log("Color scheme:", colorScheme)
+  })
+
   //TODO Check if authGuard is needed 
   // This will redirect away if user is already authenticated
   // useAuthGuard(false, false);
@@ -145,10 +152,10 @@ const AuthScreen = () => {
           variant="link"
           action="default"
         >
-          <Ionicons color={theme.dark ? 'white' : 'black'} name="chevron-down" size={24} />
+          <Ionicons color={colorScheme === "dark" ? 'white' : 'black'} name="chevron-down" size={24} />
         </Button>
 
-        <ThemedText type="title" className="text-[36px] font-bold text-center mb-1 text-white">Let's get started</ThemedText>
+        <ThemedText type="title" className="text-[36px] font-bold text-center mb-1 ">Let's get started</ThemedText>
         <ThemedText type="subtitle" className="text-base text-center mb-8 px-5 text-gray-400 w-[70%] self-center">
           Welcome to Vent—a safe space to share and connect.
         </ThemedText>
@@ -173,7 +180,7 @@ const AuthScreen = () => {
             onPress={() => signInWithApple(showToast)} 
           >
             <Ionicons name="logo-apple" size={24} color="#000" />
-            <ButtonText variant="solid" className="ml-2.5 text-base">Continue with Apple</ButtonText>
+            <ButtonText variant="solid" className="ml-2.5 text-base color-black">Continue with Apple</ButtonText>
           </Button>
         </View>
       </Animated.View>

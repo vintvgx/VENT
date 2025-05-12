@@ -18,6 +18,8 @@ export function ThemedText({
   const colorScheme = useColorScheme();
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
+  console.log("TEXT COLOR ", color)
+
   return (
     <Text
       style={[

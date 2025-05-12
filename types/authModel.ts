@@ -9,6 +9,8 @@ import { UseMutationResult } from '@tanstack/react-query';
 export enum OnboardingStep {
   NONE = 'none',
   ROLE = 'role',
+  USERNAME = 'username',
+  MOBILE = 'mobile',
   PROFILE = 'profile',
   ASSESSMENT = 'assessment',
   COMPLETED = 'completed'
