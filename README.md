@@ -79,3 +79,4 @@ expo start --dev-client
 5/1 day off
 5:7 LATE. TODO FOR 5/8
 5:10. ugh. 
+5/12 - KDOT
