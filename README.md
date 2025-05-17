@@ -81,3 +81,4 @@ expo start --dev-client
 5:10. ugh. 
 5/12 - KDOT
 5/14. celtics
+5/15. ill be there tmr. 
