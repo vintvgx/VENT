@@ -82,3 +82,4 @@ expo start --dev-client
 5/12 - KDOT
 5/14. celtics
 5/15. ill be there tmr. 
+5/22 we bacj this weekend
