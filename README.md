@@ -83,3 +83,4 @@ expo start --dev-client
 5/14. celtics
 5/15. ill be there tmr. 
 5/22 we bacj this weekend
+5/24 DEKA
