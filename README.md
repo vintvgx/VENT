@@ -86,3 +86,4 @@ expo start --dev-client
 5/24 DEKA
 5/26 DEKA
 5/27 DEKA
+5//8 DEKKKKKFUCKKKKKAAA
