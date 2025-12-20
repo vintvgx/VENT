@@ -16,7 +16,7 @@ export function useProfile() {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .single(); 
         
       if (error) throw error;
 
