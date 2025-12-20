@@ -4,29 +4,25 @@ import { UserMetaData, UserType } from "@/types/user/user";
 import {
   GoogleSignin,
   isSuccessResponse,
-  statusCodes
+  statusCodes,
 } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { nanoid } from "nanoid";
+import { prettyJSON } from "../strings/function";
+
 
 GoogleSignin.configure({
   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-  iosClientId:
-    "49402666160-hrdp0lalkae29cjs5biltjbv9cbc2tsb.apps.googleusercontent.com",
-  webClientId:
-    "49402666160-vs5sjj0q2td8k3320j0or0v0fag0k7lr.apps.googleusercontent.com",
-  profileImageSize: 150,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  profileImageSize:
+    Number(process.env.EXPO_PUBLIC_GOOGLE_PROFILE_IMAGE_SIZE) || 150,
 });
 
-//TODO swtich to this configuration for next build
-// GoogleSignin.configure({
-//   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-//   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-//   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-//   profileImageSize: Number(process.env.EXPO_PUBLIC_GOOGLE_PROFILE_IMAGE_SIZE) || 150,
-// });
 
-export const signInWithGoogle = async (showToast: (type: TOAST, message: string) => void) => {
+export const signInWithGoogle = async (
+  showToast: (type: TOAST, message: string) => void
+) => {
   try {
     await GoogleSignin.hasPlayServices();
     const response = await GoogleSignin.signIn();
@@ -42,10 +38,12 @@ export const signInWithGoogle = async (showToast: (type: TOAST, message: string)
         console.log(`Google user signed in: ${data.user.email}`);
       } else {
         console.error("Google sign-in failed with non-success response");
+        console.error("Supabase sign-in error:", error);
       }
 
       // Update user metadata if sign-in was successful
       if (data.user) {
+        console.log("Updating user metadata for:", prettyJSON(data));
         const metadataResult = await updateUserMetadata({
           firstName: user?.givenName,
           lastName: user?.familyName,
@@ -67,7 +65,7 @@ export const signInWithGoogle = async (showToast: (type: TOAST, message: string)
       }
 
       console.log("Google authentication successful:", data.user);
-      showToast(TOAST.SUCCESS, `${user.email} authenticated successfully`)
+      showToast(TOAST.SUCCESS, `${user.email} authenticated successfully`);
     }
   } catch (error: any) {
     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -84,10 +82,11 @@ export const signInWithGoogle = async (showToast: (type: TOAST, message: string)
       console.error("Unknown error occurred.");
     }
   }
-}
+};
 
-
-export const signInWithApple = async (showToast: (type: TOAST, message: string) => void) => {
+export const signInWithApple = async (
+  showToast: (type: TOAST, message: string) => void
+) => {
   try {
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
@@ -131,12 +130,12 @@ export const signInWithApple = async (showToast: (type: TOAST, message: string) 
 
       // User is signed in
       console.log("Apple authentication successful:", data.user);
-      showToast(TOAST.SUCCESS, `${data.user.email} authenticated successfully`)
+      showToast(TOAST.SUCCESS, `${data.user.email} authenticated successfully`);
     } else {
       throw new Error("No identityToken.");
     }
   } catch (e: unknown) {
-    showToast(TOAST.ERROR, e as string)
+    showToast(TOAST.ERROR, e as string);
     if (
       e instanceof Error &&
       "code" in e &&
@@ -147,8 +146,7 @@ export const signInWithApple = async (showToast: (type: TOAST, message: string) 
       console.error("Apple sign-in error:", e);
     }
   }
-}
-
+};
 
 /**
  * Generate a unique username
@@ -179,6 +177,7 @@ export const updateUserMetadata = async (userData?: UserMetaData) => {
     };
 
     // Update user metadata
+    // TODO apply to user profile table instead of auth metadata (take logic from TINDEX)
     const { data, error } = await supabase.auth.updateUser({
       data: metadataToUpdate,
     });
@@ -375,7 +374,6 @@ export const checkProfileStatus = async (userId: string | undefined) => {
     return false;
   }
 };
-
 
 /**
  * Checks if the user has completed the assessment

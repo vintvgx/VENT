@@ -1,4 +1,8 @@
-// In AuthContext.tsx
+/**
+ * AuthContext.tsx
+ * Handles authentication state and provides auth-related functions.
+ */
+
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState, OnboardingStep } from "@/types/authModel";
 import {
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           sessionData = session;
         }
 
+        // Successfully retrieved session or exhausted retries
         if (sessionData) {
           // Process the session and update state
           await handleSessionChange(sessionData);
@@ -103,21 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await handleSessionChange(session);
 
       // Invalidate queries that depend on authentication state
-      if (session?.user?.id) {
-        queryClient.invalidateQueries({
-          queryKey: ["profile", session.user.id],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["assessments", session.user.id],
-        });
-      } else {
-        queryClient.invalidateQueries({
-          queryKey: ["profile", session?.user?.id],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["assessments", session?.user?.id],
-        });
-      }
+      queryClient.invalidateQueries({
+        queryKey: ["profile", session?.user.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["assessments", session?.user.id],
+      });
     });
 
     // Start the initialization process
@@ -129,6 +125,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [queryClient]);
 
+  /**
+   * Handles session state changes in the authentication flow.
+   *
+   * This function updates the authentication state based on the current session.
+   * It follows a two-step approach to prevent premature navigation:
+   * 1. First updates user and session data while keeping the loading state active
+   * 2. Determines the appropriate onboarding step for the user
+   * 3. Finally completes the state update by setting isLoading to false
+   *
+   * This approach ensures the application won't navigate to the home screen
+   * before the onboarding status has been properly determined.
+   *
+   * @param session - The current Supabase session or null if no active session
+   */
+  const handleSessionChange = async (session: Session | null) => {
+    logDebug("Handling session change");
+    if (session) {
+      setAuthState((prev) => ({
+        ...prev,
+        user: session.user,
+        session,
+        isAuthenticated: true,
+        // Keep isLoading true until we check onboarding
+        isLoading: true,
+      }));
+
+      // Fetch user profile & assessments
+      if (session.user?.id) {
+        // This will trigger a refetch of the profile query
+        queryClient.invalidateQueries({
+          queryKey: ["profile", session.user.id],
+        });
+
+        // Similarly for assessments if you have a query for that
+        queryClient.invalidateQueries({
+          queryKey: ["assessments", session.user.id],
+        });
+      }
+
+      //Update the state with the final loading state
+      // The onboardingStep is already set by determineOnboardingStep
+      await determineOnboardingStep(session.user.id);
+
+      // Update the state
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }));
+    } else {
+      setAuthState({
+        session: null,
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
+      });
+      // Clear all queries from the cache on signout
+      queryClient.clear();
+    }
+  };
+
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
     console.log("Handling navigation based on auth and onboarding state");
@@ -137,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isInitialized) {
       // Not authenticated
       if (!authState.session) {
+        console.log("User not authenticated, navigating to auth screen");
         router.replace("/(public)/auth");
         return;
       }
@@ -146,6 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authState.onboardingStep &&
         authState.onboardingStep !== OnboardingStep.COMPLETED
       ) {
+        console.log("User in onboarding, navigating to onboarding step");
         //@ts-ignore
         router.replace(`/(onboard)/${authState.onboardingStep}`);
         return;
@@ -158,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (!authState.onboardingStep ||
           authState.onboardingStep === OnboardingStep.COMPLETED)
       ) {
+        console.log("User authenticated and onboarded, navigating to home");
         router.replace("/(app)/home");
       }
     }
@@ -297,67 +357,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         onboardingStep: OnboardingStep.PROFILE, // Default to beginning of onboarding
       }));
-    }
-  };
-
-  /**
-   * Handles session state changes in the authentication flow.
-   *
-   * This function updates the authentication state based on the current session.
-   * It follows a two-step approach to prevent premature navigation:
-   * 1. First updates user and session data while keeping the loading state active
-   * 2. Determines the appropriate onboarding step for the user
-   * 3. Finally completes the state update by setting isLoading to false
-   *
-   * This approach ensures the application won't navigate to the home screen
-   * before the onboarding status has been properly determined.
-   *
-   * @param session - The current Supabase session or null if no active session
-   */
-  const handleSessionChange = async (session: Session | null) => {
-    logDebug("Handling session change");
-    if (session) {
-      setAuthState((prev) => ({
-        ...prev,
-        user: session.user,
-        session,
-        isAuthenticated: true,
-        // Keep isLoading true until we check onboarding
-        isLoading: true,
-      }));
-
-      // Fetch user profile & assessments
-      if (session.user?.id) {
-        // This will trigger a refetch of the profile query
-        queryClient.invalidateQueries({
-          queryKey: ["profile", session.user.id],
-        });
-
-        // Similarly for assessments if you have a query for that
-        queryClient.invalidateQueries({
-          queryKey: ["assessments", session.user.id],
-        });
-      }
-
-      //Update the state with the final loading state
-      // The onboardingStep is already set by determineOnboardingStep
-      await determineOnboardingStep(session.user.id);
-
-      // Update the state
-      setAuthState((prev) => ({
-        ...prev,
-        isLoading: false,
-      }));
-    } else {
-      setAuthState({
-        session: null,
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        onboardingStep: OnboardingStep.NONE,
-      });
-      // Clear all queries from the cache on signout
-      queryClient.clear();
     }
   };
 

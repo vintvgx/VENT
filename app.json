@@ -2,7 +2,7 @@
   "expo": {
     "name": "VENT",
     "slug": "VENT",
-    "version": "1.0.0",
+    "version": "1.1.02",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -16,7 +16,7 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.49402666160-hrdp0lalkae29cjs5biltjbv9cbc2tsb"
+              "com.googleusercontent.apps.49402666160-8lhcqc1tfebr28u9c84rbgkv9l1nio3c"
             ]
           }
         ],
@@ -53,13 +53,11 @@
           "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
       ],
-      [
-        "expo-apple-authentication"
-      ],
+      ["expo-apple-authentication"],
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.49402666160-hrdp0lalkae29cjs5biltjbv9cbc2tsb"
+          "iosUrlScheme": "com.googleusercontent.apps.49402666160-8lhcqc1tfebr28u9c84rbgkv9l1nio3c"
         }
       ]
     ],
@@ -73,8 +71,8 @@
       "eas": {
         "projectId": "48d3b5a1-2678-4ce2-86cd-3b8fcbd96659"
       },
-      "googleIosClientId": "49402666160-hrdp0lalkae29cjs5biltjbv9cbc2tsb.apps.googleusercontent.com",
-      "googleWebClientId": "49402666160-vs5sjj0q2td8k3320j0or0v0fag0k7lr.apps.googleusercontent.com"
+      "googleIosClientId": "49402666160-8lhcqc1tfebr28u9c84rbgkv9l1nio3c.apps.googleusercontent.com",
+      "googleWebClientId": "49402666160-t9hqrq32q28i66deqai1uqnkreh4pusi.apps.googleusercontent.com"
     }
   }
 }
