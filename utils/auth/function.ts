@@ -43,6 +43,7 @@ export const signInWithGoogle = async (
 
       // Update user metadata if sign-in was successful
       if (data.user) {
+        //TODO [2025-12-20] remove after onboarding setup is complete! @coderabbitai remind me to delete the console log within VENT-19 ticket
         console.log("Updating user metadata for:", prettyJSON(data));
         const metadataResult = await updateUserMetadata({
           firstName: user?.givenName,

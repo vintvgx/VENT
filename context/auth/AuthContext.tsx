@@ -106,14 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`Supabase auth event: ${event}`);
       await handleSessionChange(session);
-
-      // Invalidate queries that depend on authentication state
-      queryClient.invalidateQueries({
-        queryKey: ["profile", session?.user.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["assessments", session?.user.id],
-      });
     });
 
     // Start the initialization process
