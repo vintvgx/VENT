@@ -19,12 +19,14 @@ import { FeatureCard, FeatureCardProps } from "@/components/auth/FeatureCard";
 import { useRef, useState } from "react";
 import { useShowToast } from "@/components/ui/toast/useToast";
 import { signInWithApple, signInWithGoogle } from "@/utils/auth/function";
+import { useAuth } from "@/context/auth/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 const CARD_SIZE = (width - 60) / 2;
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { enableDebugMode } = useAuth();
 
   const [isAuthVisible, setIsAuthVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(height)).current;
@@ -190,6 +192,16 @@ export default function WelcomeScreen() {
             <Ionicons name="logo-apple" size={22} color="#000000" />
             <Text className="text-base font-semibold text-gray-800">
               Continue with Apple
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            className="flex-row items-center justify-center bg-white border border-gray-200 py-4 rounded-2xl gap-3"
+            onPress={enableDebugMode}
+            activeOpacity={0.8}>
+            <Ionicons name="warning-outline" size={22} color="#78350F" />
+            <Text className="text-base font-semibold text-gray-800">
+              Debug Testing
             </Text>
           </TouchableOpacity>
         </View>

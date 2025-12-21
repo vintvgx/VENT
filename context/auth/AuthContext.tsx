@@ -4,7 +4,7 @@
  */
 
 import { supabase } from "@/lib/supabase/supabase";
-import { AuthContextType, AuthState, OnboardingStep } from "@/types/authModel";
+import { AuthContextType, AuthState, OnboardingStep, DebugOnboardingData } from "@/types/authModel";
 import { ProfileModel } from "@/types/user/user";
 import {
   checkAssessmentStatus,
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
+    isDebugMode: false,
   });
 
   // state to track initial navigation
@@ -39,6 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   // Track if we're currently in onboarding route to avoid navigation conflicts
   const isInOnboardingRouteRef = useRef(false);
+
+  // Debug mode storage keys
+  const DEBUG_MODE_KEY = "debug_mode_enabled";
+  const DEBUG_DATA_KEY = "debug_onboarding_data";
 
   // Initialize session data and set up auth listeners
   useEffect(() => {
@@ -269,11 +274,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
     console.log("Handling navigation based on auth and onboarding state");
-    if (authState.isLoading) return;
 
     if (isInitialized) {
-      // Not authenticated
-      if (!authState.session) {
+      // Debug mode: handle navigation separately
+      if (authState.isDebugMode) {
+        // In debug mode, check onboarding step
+        if (
+          authState.onboardingStep &&
+          authState.onboardingStep !== OnboardingStep.COMPLETED
+        ) {
+          // Only navigate to onboarding if we're not already there
+          if (!isInOnboardingRouteRef.current) {
+            console.log("Debug mode: navigating to onboarding step:", authState.onboardingStep);
+            isInOnboardingRouteRef.current = true;
+            //@ts-ignore - Expo Router dynamic route
+            router.replace(`/(onboard)/${authState.onboardingStep}`);
+          } else {
+            console.log("Debug mode: Already in onboarding route, letting layout handle step navigation");
+          }
+          return;
+        } else if (
+          !authState.onboardingStep ||
+          authState.onboardingStep === OnboardingStep.COMPLETED
+        ) {
+          // Debug mode and onboarding complete, go to home
+          console.log("Debug mode: onboarding complete, navigating to home");
+          router.replace("/(app)/home");
+          return;
+        }
+      }
+
+      // Not authenticated (and not in debug mode)
+      if (!authState.session && !authState.isDebugMode) {
         console.log("User not authenticated, navigating to auth screen");
         router.replace("/(public)/welcome");
         return;
@@ -490,6 +522,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Debug mode functions
+  const enableDebugMode = async () => {
+    try {
+      await AsyncStorage.setItem(DEBUG_MODE_KEY, "true");
+      setAuthState((prev) => ({
+        ...prev,
+        isDebugMode: true,
+        isAuthenticated: true,
+        onboardingStep: OnboardingStep.USERNAME,
+      }));
+      // Navigate to onboarding
+      router.replace("/(onboard)/username");
+    } catch (error) {
+      console.error("Error enabling debug mode:", error);
+    }
+  };
+
+  const disableDebugMode = async () => {
+    try {
+      await AsyncStorage.removeItem(DEBUG_MODE_KEY);
+      await AsyncStorage.removeItem(DEBUG_DATA_KEY);
+      setAuthState((prev) => ({
+        ...prev,
+        isDebugMode: false,
+        isAuthenticated: false,
+        onboardingStep: OnboardingStep.NONE,
+      }));
+    } catch (error) {
+      console.error("Error disabling debug mode:", error);
+    }
+  };
+
+  const clearDebugData = async () => {
+    try {
+      await AsyncStorage.removeItem(DEBUG_DATA_KEY);
+      await AsyncStorage.removeItem("onboardingStep");
+      setAuthState((prev) => ({
+        ...prev,
+        isDebugMode: false,
+        onboardingStep: OnboardingStep.USERNAME,
+      }));
+      router.replace("/(public)/welcome");
+    } catch (error) {
+      console.error("Error clearing debug data:", error);
+    }
+  };
+
+  const getDebugData = async (): Promise<DebugOnboardingData | null> => {
+    try {
+      const data = await AsyncStorage.getItem(DEBUG_DATA_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error("Error getting debug data:", error);
+      return null;
+    }
+  };
+
+  const saveDebugData = async (data: Partial<DebugOnboardingData>) => {
+    try {
+      const existing = await getDebugData();
+      const updated = { ...existing, ...data };
+      await AsyncStorage.setItem(DEBUG_DATA_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.error("Error saving debug data:", error);
+    }
+  };
+
+  // Check debug mode on mount and restore state
+  useEffect(() => {
+    const checkDebugMode = async () => {
+      try {
+        const isDebug = await AsyncStorage.getItem(DEBUG_MODE_KEY);
+        if (isDebug === "true") {
+          // Restore debug mode state
+          const savedStep = await AsyncStorage.getItem("onboardingStep");
+          const onboardingStep = (savedStep as OnboardingStep) || OnboardingStep.USERNAME;
+          
+          setAuthState((prev) => ({
+            ...prev,
+            isDebugMode: true,
+            isAuthenticated: true,
+            isLoading: false,
+            onboardingStep: onboardingStep,
+          }));
+          
+          // Mark as initialized so navigation can proceed
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error("Error checking debug mode:", error);
+      }
+    };
+    checkDebugMode();
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -497,6 +624,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOutMutation,
         refreshSession,
         setOnboardingStep,
+        isDebugMode: authState.isDebugMode || false,
+        enableDebugMode,
+        disableDebugMode,
+        clearDebugData,
+        getDebugData,
+        saveDebugData,
       }}>
       {children}
     </AuthContext.Provider>

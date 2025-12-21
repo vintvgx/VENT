@@ -56,8 +56,9 @@ export default function RoleSelectionScreen() {
   const showToast = useShowToast();
 
   const {
-    authState: { user, profile },
+    authState: { user, profile, isDebugMode },
     setOnboardingStep,
+    saveDebugData,
   } = useAuth();
 
   const handleContinue = async () => {
@@ -71,9 +72,18 @@ export default function RoleSelectionScreen() {
     setError(null);
 
     try {
+      // In debug mode, save to debug storage instead of Supabase
+      if (isDebugMode) {
+        await saveDebugData({ role: selectedRole });
+        console.log("Debug: Role saved");
+        await setOnboardingStep(OnboardingStep.ASSESSMENT);
+        setIsLoading(false);
+        return;
+      }
+
+      // Normal mode: upsert to Supabase
       if (!user) throw new Error("User not authenticated");
 
-      // Upsert the role to Supabase using the centralized function
       const result = await upsertProfile({
         userId: user.id,
         role: selectedRole,

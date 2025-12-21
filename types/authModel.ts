@@ -18,11 +18,26 @@ export enum OnboardingStep {
   COMPLETED = 'completed'
 }
 
+export type DebugOnboardingData = {
+  username?: string;
+  fullName?: string;
+  dob?: string; // ISO string
+  phoneNumber?: string;
+  role?: string;
+};
+
 export type AuthContextType = {
   authState: AuthState;
   refreshSession: () => Promise<void>;
   setOnboardingStep: (state: OnboardingStep) => Promise<void>;
   signOutMutation?: UseMutationResult<void, Error, void>;
+  // Debug mode functions
+  isDebugMode: boolean;
+  enableDebugMode: () => Promise<void>;
+  disableDebugMode: () => Promise<void>;
+  clearDebugData: () => Promise<void>;
+  getDebugData: () => Promise<DebugOnboardingData | null>;
+  saveDebugData: (data: Partial<DebugOnboardingData>) => Promise<void>;
   };
   
 export type AuthState = {
@@ -32,5 +47,6 @@ export type AuthState = {
   isLoading: boolean;
   isAuthenticated: boolean;
   onboardingStep?: OnboardingStep;
+  isDebugMode?: boolean;
 };
   
