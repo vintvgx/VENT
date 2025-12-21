@@ -1,265 +1,141 @@
-"use client"
-
-import { Redirect, Stack, useRouter } from "expo-router"
+/**
+ * Onboarding Layout for VENT App
+ * Copy this to: app/(onboarding)/_layout.tsx
+ *
+ * Features horizontal icon-based step indicators
+ */
+import type React from "react";
 import {
   View,
-  ActivityIndicator,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  TouchableOpacity,
+  StatusBar,
   KeyboardAvoidingView,
   Platform,
-  StatusBar,
-} from "react-native"
-import { ThemedView } from "@/components/ThemedView"
-import { ThemedText } from "@/components/ThemedText"
-import { useAuth } from "@/context/auth/AuthContext"
-import { OnboardingStep } from "@/types/authModel"
-import { LogOut } from "lucide-react-native"
-import { useEffect, useRef } from "react"
+  ActivityIndicator,
+  Text,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, Stack, useSegments } from "expo-router";
+import { useAuth } from "@/context/auth/AuthContext";
+import { OnboardingStep } from "@/types/authModel";
 
-const { width } = Dimensions.get("window")
+// Define step configuration with icons
+const ONBOARDING_STEPS = [
+  { key: OnboardingStep.USERNAME, icon: "at-outline" as const, label: "Username" },
+  { key: OnboardingStep.PROFILE, icon: "person-outline" as const, label: "Profile" },
+  { key: OnboardingStep.MOBILE, icon: "call-outline" as const, label: "Mobile" },
+  { key: OnboardingStep.ROLE, icon: "people-outline" as const, label: "Role" },
+  {
+    key: OnboardingStep.ASSESSMENT,
+    icon: "clipboard-outline" as const,
+    label: "Assessment",
+  },
+];
+
+interface StepIndicatorProps {
+  steps: typeof ONBOARDING_STEPS;
+  currentStepIndex: number;
+}
+
+const StepIndicator: React.FC<StepIndicatorProps> = ({
+  steps,
+  currentStepIndex,
+}) => {
+  return (
+    <View className="items-center">
+      <View className="flex-row bg-gray-100 rounded-full p-1.5 gap-1">
+        {steps.map((step, index) => {
+          const isActive = index <= currentStepIndex;
+          const isCurrent = index === currentStepIndex;
+
+          return (
+            <View
+              key={step.key}
+              className={`w-10 h-10 rounded-full justify-center items-center ${
+                isActive ? "bg-indigo-500" : "bg-transparent"
+              } ${isCurrent ? "shadow-md shadow-indigo-500" : ""}`}>
+              <Ionicons
+                name={step.icon}
+                size={20}
+                color={isActive ? "#FFFFFF" : "#9CA3AF"}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
 
 export default function OnboardingLayout() {
-  const { authState, signOutMutation } = useAuth()
-  const router = useRouter()
-  const progressAnimation = useRef(new Animated.Value(0)).current
+  // Uncomment and use your auth context
+  const { authState, signOutMutation } = useAuth();
+  const segments = useSegments();
 
-  // Animate progress bar when step changes
-  useEffect(() => {
-    if (!authState.isLoading && authState.onboardingStep) {
-      let stepValue = 0
+  // Sets the authState current onboarding step
+  const currentStep = authState.onboardingStep;
 
-      switch (authState.onboardingStep) {
-        case OnboardingStep.PROFILE:
-          stepValue = 1
-          break
-        case OnboardingStep.USERNAME:
-          stepValue = 2
-          break
-        case OnboardingStep.MOBILE:
-          stepValue = 3
-          break 
-        case OnboardingStep.ROLE:
-          stepValue = 4
-          break
-        case OnboardingStep.ASSESSMENT:
-          stepValue = 5
-          break
-      }
+  console.log("Auth state current step : ", currentStep)
 
-      Animated.timing(progressAnimation, {
-        toValue: stepValue / 3, // 3 total steps
-        duration: 600,
-        useNativeDriver: false,
-      }).start()
-    }
-  }, [authState.onboardingStep, authState.isLoading])
+  // matches the index to display accurately 
+  const currentStepIndex = ONBOARDING_STEPS.findIndex(
+    (s) => s.key === currentStep
+  );
+  
+  // Get the current route segment (e.g., ["(onboard)", "username"])
+  const currentRoute = segments[segments.length - 1] || "";
 
-  // Show loading indicator while checking auth state
   if (authState.isLoading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
-        <View style={styles.loadingCard}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <ThemedText style={styles.loadingText}>Loading your profile...</ThemedText>
+      <View className="flex-1 justify-center items-center bg-neutral-50">
+        <View className="bg-white p-8 rounded-2xl items-center shadow-lg">
+          <ActivityIndicator size="large" color="#6366F1" />
+          <Text className="mt-4 text-base font-medium text-gray-700">
+            Loading your profile...
+          </Text>
         </View>
-      </ThemedView>
-    )
-  }
-
-  // If no session, redirect to auth
-  if (!authState.session) {
-    return <Redirect href="/(public)/auth" />
+      </View>
+    );
   }
 
   // If onboarding is completed, redirect to home
-  if (!authState.onboardingStep || authState.onboardingStep === OnboardingStep.COMPLETED) {
-    return <Redirect href="/(app)/home" />
+  if (
+    !authState.onboardingStep ||
+    authState.onboardingStep === OnboardingStep.COMPLETED
+  ) {
+    return <Redirect href="/(app)/home" />;
   }
 
-  // Create progress tracker based on current step
-  const totalSteps = 5 // Role, Profile and Assessment
-  const currentStep = (() => {
-    switch (authState.onboardingStep) {
-      case OnboardingStep.PROFILE:
-        return 1
-      case OnboardingStep.USERNAME:
-        return 2
-      case OnboardingStep.MOBILE:
-        return 3
-      case OnboardingStep.ROLE:
-        return 4
-      case OnboardingStep.ASSESSMENT:
-        return 5
-      default:
-        return 1
-    }
-  })()
-
-  // Get step title
-  const getStepTitle = () => {
-    switch (authState.onboardingStep) {
-      case OnboardingStep.PROFILE:
-        return "Profile Setup"
-      case OnboardingStep.USERNAME:
-        return "Set Username"
-      case OnboardingStep.MOBILE:
-        return "Set Mobile Number"
-      case OnboardingStep.ROLE:
-        return "Role Selection"
-      case OnboardingStep.ASSESSMENT:
-        return "Assessment"
-      default:
-        return "Onboarding"
-    }
-  }
-
-  //TODO Remove or place within Testing keypress 
-  const handleSignOut = async () => {
-    try {
-      await signOutMutation?.mutateAsync();
-    } catch (error) {
-      console.error('Error signing out:', error);
+  // Redirect to the correct onboarding step if we're not already on it
+  // This handles step changes within the onboarding flow
+  if (currentStep && currentStep !== OnboardingStep.COMPLETED) {
+    // Only redirect if we're not already on the correct route
+    if (currentRoute !== currentStep) {
+      return <Redirect key={currentStep} href={`/(onboard)/${currentStep}`} />;
     }
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardAvoidingContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <ThemedView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      className="flex-1 bg-neutral-50"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
 
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <ThemedText style={styles.stepTitle}>{getStepTitle()}</ThemedText>
-            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
-              <LogOut size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBarContainer}>
-            <ThemedText style={styles.progressText}>
-              Step {currentStep} of {totalSteps}
-            </ThemedText>
-            <View style={styles.progressBar}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: progressAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        </View>
-
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: styles.stackContent,
-          }}
+      <View
+        className="pt-16 pb-5 px-5"
+        style={{ paddingTop: Platform.OS === "ios" ? 60 : 40 }}>
+        <StepIndicator
+          steps={ONBOARDING_STEPS}
+          currentStepIndex={currentStepIndex}
         />
-      </ThemedView>
-    </KeyboardAvoidingView>
-  )
-}
+      </View>
 
-const styles = StyleSheet.create({
-  keyboardAvoidingContainer: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8F9FA",
-  },
-  loadingCard: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  header: {
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingBottom: 16,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  signOutButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#F0F0F0",
-  },
-  progressContainer: {
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 8,
-  },
-  progressBarContainer: {
-    marginTop: 16,
-  },
-  progressText: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#007AFF",
-    borderRadius: 4,
-  },
-  stackContent: {
-    backgroundColor: "#F8F9FA",
-  },
-})
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#FAFAFA" },
+          animation: "slide_from_right",
+        }}
+      />
+    </KeyboardAvoidingView>
+  );
+}

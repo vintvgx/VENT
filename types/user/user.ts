@@ -25,8 +25,8 @@ export interface UserModel {
  * Enum to identify user types in the system
  */
 export enum UserType {
-  HOST = 'host',
-  CLIENT = 'client'
+  HOST = 'HOST',
+  CLIENT = 'CLIENT'
 }
 
 /**

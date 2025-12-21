@@ -5,17 +5,19 @@
 
 import { supabase } from "@/lib/supabase/supabase";
 import { AuthContextType, AuthState, OnboardingStep } from "@/types/authModel";
+import { ProfileModel } from "@/types/user/user";
 import {
   checkAssessmentStatus,
   checkProfileStatus,
   checkRoleStatus,
+  checkUsernameStatus,
 } from "@/utils/auth/function";
 import { logDebug } from "@/utils/strings/function";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 // Create the context with default values
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     user: null,
+    profile: null,
     isLoading: true,
     isAuthenticated: false,
     onboardingStep: OnboardingStep.NONE,
@@ -33,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // state to track initial navigation
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Track if we're currently in onboarding route to avoid navigation conflicts
+  const isInOnboardingRouteRef = useRef(false);
 
   // Initialize session data and set up auth listeners
   useEffect(() => {
@@ -118,13 +124,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient]);
 
   /**
+   * Fetches the user's profile from the profiles table
+   * @param userId - The user's ID
+   * @returns The profile data or null if not found
+   */
+  const fetchUserProfile = async (userId: string | undefined): Promise<ProfileModel | null> => {
+    if (!userId) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        // If profile doesn't exist yet, that's okay (user is still onboarding)
+        if (error.code === "PGRST116") {
+          logDebug("Profile not found for user:", userId);
+          return null;
+        }
+        console.error("Error fetching user profile:", error);
+        return null;
+      }
+
+      logDebug("Profile data fetched successfully");
+      return data as ProfileModel;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
+  /**
    * Handles session state changes in the authentication flow.
    *
    * This function updates the authentication state based on the current session.
    * It follows a two-step approach to prevent premature navigation:
    * 1. First updates user and session data while keeping the loading state active
-   * 2. Determines the appropriate onboarding step for the user
-   * 3. Finally completes the state update by setting isLoading to false
+   * 2. Fetches the user's profile data
+   * 3. Determines the appropriate onboarding step for the user
+   * 4. Finally completes the state update by setting isLoading to false
    *
    * This approach ensures the application won't navigate to the home screen
    * before the onboarding status has been properly determined.
@@ -143,9 +183,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: true,
       }));
 
-      // Fetch user profile & assessments
+      // Fetch user profile
+      let profile: ProfileModel | null = null;
       if (session.user?.id) {
-        // This will trigger a refetch of the profile query
+        profile = await fetchUserProfile(session.user.id);
+        
+        // Update state with profile
+        setAuthState((prev) => ({
+          ...prev,
+          profile,
+        }));
+
+        // Set the profile in the query cache so components using useProfile can access it
+        if (profile) {
+          queryClient.setQueryData(["profile", session.user.id], profile);
+        }
+
+        // This will trigger a refetch of the profile query for components using useProfile
         queryClient.invalidateQueries({
           queryKey: ["profile", session.user.id],
         });
@@ -169,6 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         session: null,
         user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
@@ -177,6 +232,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.clear();
     }
   };
+
+  // Sync profile from query cache to authState when it's updated via mutations
+  useEffect(() => {
+    if (!authState.user?.id) return;
+
+    // Subscribe to query cache updates for the profile
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event?.type === "updated" &&
+        Array.isArray(event.query.queryKey) &&
+        event.query.queryKey[0] === "profile" &&
+        event.query.queryKey[1] === authState.user?.id
+      ) {
+        const profileData = event.query.state.data as ProfileModel | undefined;
+        if (profileData) {
+          setAuthState((prev) => {
+            // Only update if the profile data has actually changed
+            if (prev.profile?.updated_at !== profileData.updated_at) {
+              return {
+                ...prev,
+                profile: profileData,
+              };
+            }
+            return prev;
+          });
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [authState.user?.id, queryClient]);
 
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
@@ -187,19 +275,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Not authenticated
       if (!authState.session) {
         console.log("User not authenticated, navigating to auth screen");
-        router.replace("/(public)/auth");
+        router.replace("/(public)/welcome");
         return;
       }
 
-      // Authenticated but in onboarding
+      // Authenticated but in onboarding - only navigate if not already in onboarding route
+      // The layout will handle redirecting to the correct step using Redirect component
       if (
         authState.onboardingStep &&
         authState.onboardingStep !== OnboardingStep.COMPLETED
       ) {
-        console.log("User in onboarding, navigating to onboarding step");
-        //@ts-ignore
-        router.replace(`/(onboard)/${authState.onboardingStep}`);
+        // Only navigate to onboarding if we're not already there
+        // Once in onboarding, the layout's Redirect component will handle step changes
+        if (!isInOnboardingRouteRef.current) {
+          console.log("User in onboarding, navigating to onboarding step:", authState.onboardingStep);
+          isInOnboardingRouteRef.current = true;
+          //@ts-ignore - Expo Router dynamic route
+          router.replace(`/(onboard)/${authState.onboardingStep}`);
+        } else {
+          console.log("Already in onboarding route, letting layout handle step navigation");
+        }
         return;
+      } else {
+        // Reset the ref when not in onboarding
+        isInOnboardingRouteRef.current = false;
       }
 
       // Fully authenticated and onboarded
@@ -229,6 +328,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         session: null,
         user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
@@ -236,7 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Only navigate after signing out if initialization is complete
       if (isInitialized) {
-        router.replace("/(public)/auth");
+        router.replace("/(public)/welcome");
       }
 
       // Clear all queries from the cache on signout
@@ -248,13 +348,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState({
         session: null,
         user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
         onboardingStep: OnboardingStep.NONE,
       });
 
       if (isInitialized) {
-        router.replace("/(public)/auth");
+        router.replace("/(public)/welcome");
       }
     },
   });
@@ -281,6 +382,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         session: null,
         user: null,
+        profile: null,
         isLoading: false,
         isAuthenticated: false,
       }));
@@ -316,10 +418,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!hasCompletedAssessment) {
         // Check user's progress
 
+        // Check if user has set their username
+        // Navigate to [OnboardingStep.USERNAME] as initial screen in onboard workflow
+        const hasUsername = await checkUsernameStatus(userId);
+        if (!hasUsername) {
+          logDebug("Username REQUIRED");
+          setAuthState((prev) => ({
+            ...prev,
+            onboardingStep: OnboardingStep.USERNAME,
+          }));
+          return;
+        }
+        
         // Check if user has completed setting up their profile
         const hasProfile = await checkProfileStatus(userId);
         if (!hasProfile) {
-          logDebug("User has not set their profile");
+          logDebug("Profile REQUIRED");
           setAuthState((prev) => ({
             ...prev,
             onboardingStep: OnboardingStep.PROFILE,
@@ -330,7 +444,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if user has selected a role
         const hasSelectedRole = await checkRoleStatus(userId);
         if (!hasSelectedRole) {
-          logDebug("User has not set their role");
+          logDebug("Role REQUIRED");
           setOnboardingStep(OnboardingStep.ROLE);
           return;
         }

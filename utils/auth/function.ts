@@ -352,7 +352,7 @@ export const checkRoleStatus = async (userId: string | undefined) => {
  * @param userId the user's id
  * @returns true if the user has completed profile setup, false otherwise
  */
-export const checkProfileStatus = async (userId: string | undefined) => {
+export const checkUsernameStatus = async (userId: string | undefined) => {
   if (userId === undefined) return false;
 
   try {
@@ -370,6 +370,35 @@ export const checkProfileStatus = async (userId: string | undefined) => {
 
     // Check if profile exists and has required fields
     return data && data?.id && data?.username; // adjust based on your required fields
+  } catch (error) {
+    console.error("Error in profile check:", error);
+    return false;
+  }
+};
+
+/**
+ * Checks if the user has completed profile setup
+ * @param userId the user's id
+ * @returns true if the user has completed profile setup, false otherwise
+ */
+export const checkProfileStatus = async (userId: string | undefined) => {
+  if (userId === undefined) return false;
+
+  try {
+    // Query your profile table in Supabase
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error checking profile:", error);
+      return false;
+    }
+
+    // Check if profile exists and has required fields
+    return data && data?.id && data?.first_name && data?.last_name && data?.dob; // adjust based on your required fields
   } catch (error) {
     console.error("Error in profile check:", error);
     return false;
@@ -396,5 +425,108 @@ export const checkAssessmentStatus = async (userId: string | undefined) => {
   } catch (error) {
     console.error("Error in assessment check:", error);
     return false;
+  }
+};
+
+/**
+ * Profile data fields that can be updated during onboarding
+ */
+export interface UpsertProfileParams {
+  userId: string;
+  username?: string;
+  fullName?: string; // Will be split into firstName and lastName
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  dob?: Date | null;
+  role?: UserType;
+  phoneNumber?: string; // Phone number in E.164 format
+}
+
+/**
+ * Upserts user profile data to the profiles table in Supabase.
+ * This function handles partial updates, so only provided fields will be updated.
+ * 
+ * @param params - Profile data to upsert. userId is required, other fields are optional.
+ * @returns Object containing success status, updated profile data, and any error
+ */
+export const upsertProfile = async (params: UpsertProfileParams): Promise<{ 
+  success: boolean; 
+  data?: any; // Updated profile data from Supabase
+  error?: any 
+}> => {
+  try {
+    const { userId, username, fullName, firstName, lastName, email, dob, role, phoneNumber } = params;
+
+    // Build the update object with only provided fields
+    const updateData: Record<string, any> = {
+      id: userId,
+      updated_at: new Date(),
+    };
+
+    // Handle username
+    if (username !== undefined) {
+      updateData.username = username.trim();
+    }
+
+    // Handle fullName - split into firstName and lastName
+    if (fullName !== undefined) {
+      const trimmedFullName = fullName.trim();
+      const nameParts = trimmedFullName.split(/\s+/).filter(part => part.length > 0);
+      
+      if (nameParts.length > 0) {
+        // First name is the first part
+        updateData.first_name = nameParts[0];
+        // Last name is everything after the first part, joined with spaces
+        updateData.last_name = nameParts.slice(1).join(" ") || "";
+      } else {
+        updateData.first_name = "";
+        updateData.last_name = "";
+      }
+    } else {
+      // If fullName not provided, use firstName/lastName if provided
+      if (firstName !== undefined) {
+        updateData.first_name = firstName.trim();
+      }
+      if (lastName !== undefined) {
+        updateData.last_name = lastName.trim();
+      }
+    }
+
+    // Handle date of birth - convert Date to ISO string
+    if (dob !== undefined) {
+      updateData.dob = dob ? dob.toISOString() : null;
+    }
+
+    // Handle role
+    if (role !== undefined) {
+      updateData.role = role;
+    }
+
+    if (email !== undefined) {
+      updateData.email = email;
+    }
+
+    // Handle phone number
+    if (phoneNumber !== undefined) {
+      updateData.phone_number = phoneNumber.trim();
+    }
+
+    // Perform the upsert and select the updated data
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(updateData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error upserting profile:", error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Error in upsertProfile:", error);
+    return { success: false, error };
   }
 };
