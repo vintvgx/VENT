@@ -13,8 +13,6 @@ import { useAssessment } from "@/hooks/queries/auth/useAssessmentQuery";
 import { ToastService } from "@/services/ToastService";
 import { useEffect, useState } from "react";
 
-const { width } = Dimensions.get("window")
-
 // Helper function to format assessment responses
 const formatAssessmentResponse = (response: {
   text?: string
@@ -335,12 +333,12 @@ const HomeScreen = () => {
         {/* Sign Out / Clear Data Button */}
         <TouchableOpacity
           className={`rounded-2xl py-4 items-center mb-6 ${
-            isDebugMode ? "bg-yellow-500" : "bg-red-500"
+            !user && isDebugMode ? "bg-yellow-500" : "bg-red-500"
           }`}
           onPress={handleSignOut}
         >
           <Text className="text-white font-semibold text-base">
-            {isDebugMode ? "Clear Data" : "Sign Out"}
+            {!user && isDebugMode ? "Clear Data" : "Sign Out"}
           </Text>
         </TouchableOpacity>
       </ScrollView>
