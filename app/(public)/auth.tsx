@@ -1,191 +1,175 @@
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Button, ButtonText } from "@/components/ui/button";
-import { useShowToast } from "@/components/ui/toast/useToast";
-import { signInWithApple, signInWithGoogle } from "@/utils/auth/function";
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@react-navigation/native";
-import { Stack } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Platform,
-  SafeAreaView,
-  View,
-  useColorScheme
-} from "react-native";
+
+
+/**
+ * Auth Screen for VENT App
+ * 
+ * NOTE: Currently screen transitions to Welcome.tsx page for authentication
+ * 
+ * TODO [2025-12-20] save user profile to local storage, if it exists, use auth.tsx to display the user's profile so they can sign in (if they delete their info they are returned to Welcome screen)
+ */
+import { useRef, useState } from "react"
+import { View, Text, TouchableOpacity, SafeAreaView, Animated, Dimensions, StatusBar } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { useShowToast } from "@/components/ui/toast/useToast"
+import { signInWithApple, signInWithGoogle } from "@/utils/auth/function"
 
 const { height } = Dimensions.get("window")
 
-const AuthScreen = () => {
-  const showToast = useShowToast();
-  const theme = useTheme();
-  const colorScheme = useColorScheme();
-
-  useEffect(() => {
-    console.log("Color scheme:", colorScheme)
-  })
-
-  //TODO Check if authGuard is needed 
-  // This will redirect away if user is already authenticated
-  // useAuthGuard(false, false);
-
+export default function AuthScreen() {
   const [isAuthVisible, setIsAuthVisible] = useState(false)
   const slideAnim = useRef(new Animated.Value(height)).current
   const contentAnim = useRef(new Animated.Value(0)).current
 
+  const showToast = useShowToast();
+
+
   const showAuthPanel = () => {
     setIsAuthVisible(true)
-    // Animate auth panel up
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start()
-    
-    // Animate content up to make room for auth panel
-    Animated.timing(contentAnim, {
-      toValue: -height * 0.25, // Move up by approximately half the auth panel height
-      duration: 300,
-      useNativeDriver: true,
-    }).start()
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }),
+      Animated.timing(contentAnim, {
+        toValue: -height * 0.15,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start()
   }
 
   const hideAuthPanel = () => {
-    // Animate auth panel down
-    Animated.timing(slideAnim, {
-      toValue: height,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsAuthVisible(false)
-    })
-    
-    // Animate content back to original position
-    Animated.timing(contentAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start()
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue: height,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }),
+      Animated.timing(contentAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setIsAuthVisible(false))
+  }
+
+  const handleGoogleSignIn = () => {
+    console.log("Google sign in")
+    signInWithGoogle(showToast)
+  }
+
+  const handleAppleSignIn = () => {
+    console.log("Apple sign in")
+    signInWithApple(showToast)
   }
 
   return (
-    <SafeAreaView className="flex-1">
-      {/* Hide header */}
-      <Stack.Screen
-        options={{
-          title: "",
-          headerShown: false,
-        }}
-      />
+    <SafeAreaView className="flex-1 bg-neutral-50">
+      <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
 
-      {/* Main content */}
-      <Animated.View 
-        className="flex-1 justify-center items-center p-5 pt-20 md:pt-16"
-        style={{ transform: [{ translateY: contentAnim }] }}
-      >
-        {/* TODO Fix title display */}
-        {/* <View className="absolute top-[60px] ios:top-[60px] android:top-[40px] w-full h-[10%] items-center justify-center z-10 bg-red-500">
-          <ThemedText type="title" className="text-[52px] font-black tracking-[3px] text-center">VENT</ThemedText>
-          <ThemedText className="text-sm font-medium tracking-wider opacity-80">Connect • Share • Heal</ThemedText>
-        </View> */}
+      {/* Header */}
+      <View className="items-center pt-5 pb-2.5">
+        <Text className="text-4xl font-black tracking-widest text-gray-800">VENT</Text>
+        <Text className="text-sm text-gray-500 tracking-widest mt-1">Connect • Share • Heal</Text>
+      </View>
 
-        <View className="w-full h-4/5 rounded-2xl p-6 items-center justify-center bg-sky-600">
-          <ThemedText type="title" className="text-center mb-2.5">Connect with others through shared experiences</ThemedText>
-          <ThemedText type="subtitle" className="text-center mb-8 opacity-90">A safe space for peer-to-peer support</ThemedText>
+      {/* Main Content Card */}
+      <Animated.View className="flex-1 px-5 pt-5" style={{ transform: [{ translateY: contentAnim }] }}>
+        <View className="flex-1 rounded-3xl overflow-hidden">
+          {/* Hero Gradient Section */}
+          <View className="bg-indigo-500 px-7 pt-10 pb-7 items-center rounded-t-3xl">
+            <Ionicons name="heart-circle" size={60} color="rgba(255,255,255,0.9)" />
+            <Text className="text-2xl font-bold text-white text-center mt-4 leading-8">
+              Connect with others through shared experiences
+            </Text>
+            <Text className="text-base text-white/85 text-center mt-2">A safe space for peer-to-peer support</Text>
+          </View>
 
-          {/* Card with content */}
-          <ThemedView className="w-[90%] p-5 rounded-xl shadow-md mt-2.5 ">
-            <View className="flex-row items-center mb-2.5">
-              <View className="w-6 h-6 rounded-full bg-gray-300" />
-              <View className="w-6 h-6 rounded-full bg-gray-300 -ml-2.5" />
-              <View className="w-6 h-6 rounded-full bg-gray-300 -ml-2.5" />
-              <ThemedText className="ml-1 text-xs opacity-70">Share</ThemedText>
+          {/* Features Card */}
+          <View className="flex-1 bg-white p-6 rounded-b-3xl">
+            <View className="flex-row items-center mb-4">
+              <View className="w-7 h-7 rounded-full bg-violet-400 border-2 border-white" />
+              <View className="w-7 h-7 rounded-full bg-emerald-300 border-2 border-white -ml-2" />
+              <View className="w-7 h-7 rounded-full bg-orange-400 border-2 border-white -ml-2" />
+              <Text className="ml-2.5 text-sm text-gray-500">Join thousands</Text>
             </View>
 
-            <ThemedText type="defaultSemiBold" className="text-[22px] mb-4">Community Support</ThemedText>
+            <Text className="text-2xl font-bold text-gray-800 mb-4">Community Support</Text>
 
-            <View className="mb-4">
-              <ThemedText className="text-sm leading-[22px] mb-2">
-                • Connect with others who understand your journey
-              </ThemedText>
-              <ThemedText className="text-sm leading-[22px] mb-2">
-                • Share experiences in a safe, supportive environment
-              </ThemedText>
+            <View className="gap-3 mb-5">
+              <View className="flex-row items-start gap-2.5">
+                <Ionicons name="checkmark-circle" size={20} color="#6366F1" />
+                <Text className="flex-1 text-sm text-gray-600 leading-5">
+                  Connect with others who understand your journey
+                </Text>
+              </View>
+              <View className="flex-row items-start gap-2.5">
+                <Ionicons name="checkmark-circle" size={20} color="#6366F1" />
+                <Text className="flex-1 text-sm text-gray-600 leading-5">Share experiences in a safe environment</Text>
+              </View>
             </View>
 
-            <ThemedText type="defaultSemiBold" className="text-base mb-1">Upcoming events</ThemedText>
-            <ThemedText className="text-sm leading-5">
-              Join our weekly support circles and guided discussions
-            </ThemedText>
-          </ThemedView>
+            <View className="border-t border-gray-100 pt-4">
+              <Text className="text-base font-semibold text-gray-800 mb-1">Upcoming events</Text>
+              <Text className="text-sm text-gray-500 leading-5">
+                Join weekly support circles and guided discussions
+              </Text>
+            </View> 
+          </View>
         </View>
       </Animated.View>
 
-      {/* Sign In / Sign Up button */}
-      <Button
-        className="mb-10 mx-12 rounded-2xl h-10"
-        onPress={showAuthPanel}
-        accessibilityLabel="Sign up or sign in"
-        action="secondary"
-        variant="solid"
+      {/* Sign In Button */}
+      <TouchableOpacity
+        className="flex-row items-center justify-center bg-gray-800 mx-10 mb-10 py-4 rounded-3xl gap-2.5"
+        onPress={isAuthVisible ? hideAuthPanel : showAuthPanel}
+        activeOpacity={0.8}
       >
-        <Ionicons color={theme.dark ? 'black' : 'white'} name={isAuthVisible ? "call-outline" : "person-outline"} size={24} />
-        <ButtonText className="ml-2" variant="solid">{isAuthVisible ? "Continue with Mobile" : "Sign Up / Sign In"}</ButtonText>
-      </Button>
+        <Ionicons name={isAuthVisible ? "close" : "person-outline"} size={22} color="#FFFFFF" />
+        <Text className="text-white text-base font-semibold">{isAuthVisible ? "Close" : "Sign Up / Sign In"}</Text>
+      </TouchableOpacity>
 
+      {/* Auth Panel */}
       <Animated.View
-        className="absolute bottom-0 left-0 right-0 h-[46%] rounded-t-3xl p-5 pt-4 px-6 shadow-lg"
-        style={{
-          transform: [{ translateY: slideAnim }],
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.1,
-          shadowRadius: 10,
-          elevation: 10,
-        }}
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] px-7 pt-3 pb-12 shadow-2xl"
+        style={{ transform: [{ translateY: slideAnim }] }}
       >
-        <Button
-          className="self-center mb-2.5"
-          onPress={hideAuthPanel}
-          variant="link"
-          action="default"
-        >
-          <Ionicons color={colorScheme === "dark" ? 'white' : 'black'} name="chevron-down" size={24} />
-        </Button>
+        <TouchableOpacity className="items-center py-3" onPress={hideAuthPanel} activeOpacity={0.7}>
+          <View className="w-10 h-1 bg-gray-200 rounded" />
+        </TouchableOpacity>
 
-        <ThemedText type="title" className="text-[36px] font-bold text-center mb-1 ">Let's get started</ThemedText>
-        <ThemedText type="subtitle" className="text-base text-center mb-8 px-5 text-gray-400 w-[70%] self-center">
+        <Text className="text-3xl font-bold text-gray-800 text-center mt-2">Let's get started</Text>
+        <Text className="text-base text-gray-500 text-center mt-2 mb-8 px-5">
           Welcome to Vent—a safe space to share and connect.
-        </ThemedText>
+        </Text>
 
-        <View className="w-full gap-4">
-          <Button
-            className="bg-white border-0 mx-5 rounded-2xl h-10 items-center"
-            accessibilityLabel="Continue with Google"
-            action="primary"
-            variant="outline"
-            onPress={() => signInWithGoogle(showToast)}
+        <View className="gap-3.5">
+          <TouchableOpacity
+            className="flex-row items-center justify-center bg-white border border-gray-200 py-4 rounded-2xl gap-3"
+            onPress={handleGoogleSignIn}
+            activeOpacity={0.8}
           >
-            <Ionicons name="logo-google" size={24} color="#4285F4" />
-            <ButtonText variant="solid" className="ml-2.5 text-base">Continue with Google</ButtonText>
-          </Button>
+            <Ionicons name="logo-google" size={22} color="#4285F4" />
+            <Text className="text-base font-semibold text-gray-800">Continue with Google</Text>
+          </TouchableOpacity>
 
-          <Button
-            className="bg-white border-0 mx-5 rounded-2xl h-10 items-center"
-            accessibilityLabel="Continue with Apple"
-            action="primary"
-            variant="outline"
-            onPress={() => signInWithApple(showToast)} 
+          <TouchableOpacity
+            className="flex-row items-center justify-center bg-white border border-gray-200 py-4 rounded-2xl gap-3"
+            onPress={handleAppleSignIn}
+            activeOpacity={0.8}
           >
-            <Ionicons name="logo-apple" size={24} color="#000" />
-            <ButtonText variant="solid" className="ml-2.5 text-base color-black">Continue with Apple</ButtonText>
-          </Button>
+            <Ionicons name="logo-apple" size={22} color="#000000" />
+            <Text className="text-base font-semibold text-gray-800">Continue with Apple</Text>
+          </TouchableOpacity>
         </View>
+
+        <Text className="text-xs text-gray-400 text-center mt-6 leading-5">
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
       </Animated.View>
     </SafeAreaView>
-  );
-};
-
-export default AuthScreen;
+  )
+}

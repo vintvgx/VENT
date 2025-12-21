@@ -1,271 +1,360 @@
-// app/(onboard)/assessment.tsx
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/auth/AuthContext";
-import { ToastService } from "@/services/ToastService";
-import { OnboardingStep } from "@/types/authModel";
-import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboardModel";
-import { UserType } from "@/types/user/user";
-import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+/**
+ * Assessment Screen for VENT App
+ * 
+ */
+import { useEffect, useState } from "react"
 import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
-import { AssessmentController } from '../../controller/onboard/AssessmentController';
-import CheckboxQuestion from "../components/assessment/CheckboxQuestion";
-import MultipleChoiceQuestion from "../components/assessment/MultipleChoiceQuestion";
-import ScaleQuestion from "../components/assessment/ScaleQuestion";
-import TextQuestion from "../components/assessment/TextQuestion";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
-import { useUpdateProfileMutation } from '../../hooks/mutations/auth/useUpdateProfileMutation';
+  TextInput,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { useAuth } from "@/context/auth/AuthContext"
+import { useUpdateProfileMutation } from "@/hooks/mutations/auth/useUpdateProfileMutation"
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery"
+import { useRouter } from "expo-router"
+import { AssessmentController } from "@/controller/onboard/AssessmentController"
+import { ToastService } from "@/services/ToastService"
+import { OnboardingStep } from "@/types/authModel"
+import { AssessmentQuestion, AssessmentState, QuestionType } from "@/types/user/onboardModel"
+import { UserType } from "@/types/user/user"
+import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth/assessment_questions"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
-const AssessmentScreen = () => {
-  const { authState: {user}, setOnboardingStep } = useAuth();
-  const {data: profile, isLoading: profileLoading} = useProfile()
-  
-  const {mutate: updateProfileMutation} = useUpdateProfileMutation()
-
-  const router = useRouter();
+export default function AssessmentScreen() {
+  const { authState: { user }, setOnboardingStep } = useAuth()
+  const { data: profile, isLoading: profileLoading } = useProfile()
+  const { mutate: updateProfileMutation } = useUpdateProfileMutation()
+  const router = useRouter()
 
   const [assessment, setAssessment] = useState<AssessmentState>({
     answers: {},
     currentQuestionIndex: 0,
-    isComplete: false
-  });
+    isComplete: false,
+  })
 
-  // Determine which questions to show based on user type
-  const role = profile?.role;
-  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
-  
+  const role = profile?.role
+  const [questions, setQuestions] = useState<AssessmentQuestion[]>([])
+
   useEffect(() => {
     // Combine appropriate questions based on user type
-    let assessmentQuestions: AssessmentQuestion[] = [];
+    let assessmentQuestions: AssessmentQuestion[] = []
     
     if (role === UserType.HOST) {
-      assessmentQuestions = [...HOST_QUESTIONS];
+      assessmentQuestions = [...HOST_QUESTIONS]
     } else if (role === UserType.CLIENT) {
-      assessmentQuestions = [...CLIENT_QUESTIONS];
+      assessmentQuestions = [...CLIENT_QUESTIONS]
     }
     
     // Add common questions for all user types
-    assessmentQuestions = [...assessmentQuestions, ...COMMON_QUESTIONS];
+    assessmentQuestions = [...assessmentQuestions, ...COMMON_QUESTIONS]
     
-    setQuestions(assessmentQuestions);
-  }, [role]);
+    setQuestions(assessmentQuestions)
+  }, [role])
 
-  const currentQuestion = questions[assessment.currentQuestionIndex];
+  const currentQuestion = questions[assessment.currentQuestionIndex]
 
   const handleAnswer = async (questionId: string, answer: any) => {
-    setAssessment(prev => ({
+    setAssessment((prev) => ({
       ...prev,
       answers: {
         ...prev.answers,
-        [questionId]: answer
-      }
-    }));
+        [questionId]: answer,
+      },
+    }))
 
-    // Save current answer to Supabase 
+    // Save current answer to Supabase
     try {
-    await AssessmentController.saveCurrentAnswer(questionId, answer, user, questions);
+      await AssessmentController.saveCurrentAnswer(questionId, answer, user, questions)
     } catch (e: unknown) {
       console.log("Error saving answer to supabase:", e)
       ToastService.error(`Error saving answer to supabase: ${e}`)
     }
-  };
+  }
 
   const goToNextQuestion = () => {
-    // check if assessment current index is at the last question
     if (assessment.currentQuestionIndex < questions.length - 1) {
-      setAssessment(prev => ({
+      setAssessment((prev) => ({
         ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex + 1
-      }));
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+      }))
     } else {
-      // Assessment is complete
-      setAssessment(prev => ({
+      setAssessment((prev) => ({
         ...prev,
-        isComplete: true
-      }));
+        isComplete: true,
+      }))
     }
-  };
+  }
 
   const goToPreviousQuestion = () => {
     if (assessment.currentQuestionIndex > 0) {
-      setAssessment(prev => ({
+      setAssessment((prev) => ({
         ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex - 1
-      }));
+        currentQuestionIndex: prev.currentQuestionIndex - 1,
+      }))
     }
-  };
+  }
 
   const saveAssessmentData = async () => {
     try {
-       // Update the profile to mark assessment as completed
-       await updateProfileMutation({
+      // Update the profile to mark assessment as completed
+      updateProfileMutation({
         assessment_completed: true
-      });
+      })
       
       // Mark onboarding as completed
-      await setOnboardingStep(OnboardingStep.COMPLETED);
+      await setOnboardingStep(OnboardingStep.COMPLETED)
 
       // Delete onboardingStep ref in storage
-      await AsyncStorage.removeItem("onboardingStep");
+      await AsyncStorage.removeItem("onboardingStep")
       
       // Navigate to home/dashboard
-      router.replace('/(app)/home');
+      router.replace('/(app)/home')
     } catch (error) {
-      console.error('Error saving assessment data:', error);
-      // Handle error appropriately
+      console.error("Error saving assessment data:", error)
     }
-  };
+  }
 
-  // Render the appropriate question component based on question type
+
   const renderQuestionComponent = () => {
-    if (!currentQuestion) return null;
+    if (!currentQuestion) return null
 
-    const questionProps = {
-      question: currentQuestion,
-      value: assessment.answers[currentQuestion.id] || null,
-      onChange: (value: any) => handleAnswer(currentQuestion.id, value)
-    };
+    const currentAnswer = assessment.answers[currentQuestion.id]
 
     switch (currentQuestion.type) {
-      case QuestionType.TEXT:
-        return <TextQuestion {...questionProps} />;
-      case QuestionType.MULTIPLE_CHOICE:
-        return <MultipleChoiceQuestion {...questionProps} />;
       case QuestionType.SCALE:
-        return <ScaleQuestion {...questionProps} />;
-      case QuestionType.CHECKBOX:
-        return <CheckboxQuestion {...questionProps} />;
-      default:
-        return null;
-    }
-  };
+        // For SCALE questions, options is an array of strings like ["0-1", "1-3", "3-5", "5-10", "10+"]
+        // Render them as selectable option buttons similar to multiple choice
+        const selectedScale = currentAnswer || ""
+        return (
+          <View className="gap-2.5">
+            {currentQuestion.options?.map((option, index) => {
+              const isSelected = selectedScale === option
+              return (
+                <TouchableOpacity
+                  key={index}
+                  className={`flex-row items-center rounded-xl p-4 border-2 ${
+                    isSelected ? "bg-indigo-50 border-indigo-500" : "bg-gray-50 border-transparent"
+                  }`}
+                  onPress={() => handleAnswer(currentQuestion.id, option)}
+                  activeOpacity={0.7}
+                >
+                  <View className="w-10 h-10 rounded-lg bg-white justify-center items-center mr-3.5">
+                    <Ionicons
+                      name="ellipse-outline"
+                      size={22}
+                      color={isSelected ? "#6366F1" : "#9CA3AF"}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base font-semibold mb-0.5 ${isSelected ? "text-indigo-700" : "text-gray-700"}`}
+                    >
+                      {option}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <View className="w-6 h-6 rounded-full bg-indigo-50 justify-center items-center">
+                      <Ionicons name="checkmark" size={16} color="#6366F1" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        )
 
-  // If assessment is complete, show a summary or completion screen
+      case QuestionType.MULTIPLE_CHOICE:
+        return (
+          <View className="gap-2.5">
+            {currentQuestion.options?.map((option, index) => {
+              const isSelected = currentAnswer === option
+              return (
+                <TouchableOpacity
+                  key={index}
+                  className={`flex-row items-center rounded-xl p-4 border-2 ${
+                    isSelected ? "bg-indigo-50 border-indigo-500" : "bg-gray-50 border-transparent"
+                  }`}
+                  onPress={() => handleAnswer(currentQuestion.id, option)}
+                  activeOpacity={0.7}
+                >
+                  <View className="w-10 h-10 rounded-lg bg-white justify-center items-center mr-3.5">
+                    <Ionicons
+                      name="ellipse-outline"
+                      size={22}
+                      color={isSelected ? "#6366F1" : "#9CA3AF"}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base font-semibold mb-0.5 ${isSelected ? "text-indigo-700" : "text-gray-700"}`}
+                    >
+                      {option}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <View className="w-6 h-6 rounded-full bg-indigo-50 justify-center items-center">
+                      <Ionicons name="checkmark" size={16} color="#6366F1" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        )
+
+      case QuestionType.TEXT:
+        return (
+          <View className="mb-4">
+            <TextInput
+              className="bg-gray-50 rounded-xl p-4 text-base text-gray-800 min-h-[120px]"
+              placeholder="Type your answer here..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              textAlignVertical="top"
+              value={currentAnswer || ""}
+              onChangeText={(text) => handleAnswer(currentQuestion.id, text)}
+            />
+          </View>
+        )
+
+      case QuestionType.CHECKBOX:
+        const selectedItems = Array.isArray(currentAnswer) ? currentAnswer : []
+        return (
+          <View className="gap-2.5">
+            {currentQuestion.options?.map((option, index) => {
+              const isSelected = selectedItems.includes(option)
+              return (
+                <TouchableOpacity
+                  key={index}
+                  className={`flex-row items-center rounded-xl p-4 border-2 ${
+                    isSelected ? "bg-indigo-50 border-indigo-500" : "bg-gray-50 border-transparent"
+                  }`}
+                  onPress={() => {
+                    const newSelection = isSelected
+                      ? selectedItems.filter((item: string) => item !== option)
+                      : [...selectedItems, option]
+                    handleAnswer(currentQuestion.id, newSelection)
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    className={`w-6 h-6 rounded border-2 justify-center items-center mr-3 ${
+                      isSelected ? "bg-indigo-500 border-indigo-500" : "border-gray-300"
+                    }`}
+                  >
+                    {isSelected && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base font-semibold mb-0.5 ${isSelected ? "text-indigo-700" : "text-gray-700"}`}
+                    >
+                      {option}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        )
+
+      default:
+        return null
+    }
+  }
+
   if (assessment.isComplete) {
     return (
-      <ThemedView style={styles.container}>
-        <ThemedText style={styles.title}>Assessment Complete!</ThemedText>
-        <ThemedText style={styles.text}>Thank you for completing your assessment.</ThemedText>
-        <Button
-          style={styles.button}
-          onPress={() => saveAssessmentData()}
-        >
-          <Text>Finish Onboarding</Text>
-        </Button>
-      </ThemedView>
-    );
+      <SafeAreaView className="flex-1 bg-neutral-50">
+        <View className="flex-1 justify-center items-center p-6">
+          <View className="w-20 h-20 rounded-full bg-green-100 justify-center items-center mb-6">
+            <Ionicons name="checkmark-circle" size={48} color="#22C55E" />
+          </View>
+          <Text className="text-2xl font-bold text-gray-800 mb-3 text-center">Assessment Complete!</Text>
+          <Text className="text-base text-gray-500 text-center mb-8">
+            Thank you for completing your assessment. We'll use this to personalize your experience.
+          </Text>
+          <TouchableOpacity
+            className="bg-indigo-500 rounded-full py-4 px-8"
+            onPress={saveAssessmentData}
+            activeOpacity={0.8}
+          >
+            <Text className="text-white text-lg font-semibold">Finish Onboarding</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardAvoidingContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView style={styles.scrollView}>
-        <ThemedView style={styles.container}>
+    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <SafeAreaView className="flex-1 bg-neutral-50">
+        <ScrollView className="flex-1" contentContainerClassName="p-6 pb-32" showsVerticalScrollIndicator={false}>
           {currentQuestion && (
             <>
-              <ThemedText style={styles.title}>{currentQuestion.question}</ThemedText>
-              
-              {currentQuestion.description && (
-                <ThemedText style={styles.description}>{currentQuestion.description}</ThemedText>
-              )}
-              
-              <View style={styles.questionContainer}>
-                {renderQuestionComponent()}
+              <View className="mb-8">
+                <Text className="text-2xl font-bold text-gray-800 mb-2 leading-9">
+                  {currentQuestion.question.split(" ").map((word, index) => {
+                    // Highlight specific keywords
+                    const keywords = ["support", "comfortable", "goals", "feelings"]
+                    const isKeyword = keywords.some((kw) => word.toLowerCase().includes(kw))
+                    return isKeyword ? (
+                      <Text key={index} className="text-indigo-500 underline">
+                        {word}{" "}
+                      </Text>
+                    ) : (
+                      <Text key={index}>{word} </Text>
+                    )
+                  })}
+                </Text>
+                {currentQuestion.description && (
+                  <Text className="text-base text-gray-500 leading-6">{currentQuestion.description}</Text>
+                )}
               </View>
-              
-              <View style={styles.navigationContainer}>
-                <Button
-                  variant="outline"
-                  style={[styles.navButton, assessment.currentQuestionIndex === 0 && styles.disabledButton]}
-                  disabled={assessment.currentQuestionIndex === 0}
-                  onPress={goToPreviousQuestion}
-                >
-                  <Text>Previous</Text>
-                </Button>
-                
-                <Button
-                  style={styles.navButton}
-                  disabled={!AssessmentController.isValidAnswer(currentQuestion, assessment.answers[currentQuestion.id])}  
-                  onPress={goToNextQuestion}
-                >
-                  <Text>
-                    {assessment.currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
-                  </Text>
-                </Button>
-              </View>
-              
-              <ThemedText style={styles.progress}>
+
+              {renderQuestionComponent()}
+
+              {/* Progress indicator */}
+              <Text className="text-center text-sm text-gray-400 mt-6">
                 Question {assessment.currentQuestionIndex + 1} of {questions.length}
-              </ThemedText>
+              </Text>
             </>
           )}
-        </ThemedView>
-      </ScrollView>
+        </ScrollView>
+
+        {/* Navigation buttons */}
+        <View className="flex-row items-center px-6 pb-10 gap-3 absolute bottom-0 left-0 right-0 bg-neutral-50">
+          {assessment.currentQuestionIndex > 0 && (
+            <TouchableOpacity
+              className="w-14 h-14 rounded-full bg-gray-100 justify-center items-center"
+              onPress={goToPreviousQuestion}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color="#374151" />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            className={`flex-1 h-14 rounded-full justify-center items-center ${
+              currentQuestion && AssessmentController.isValidAnswer(currentQuestion, assessment.answers[currentQuestion?.id])
+                ? "bg-indigo-500"
+                : "bg-indigo-300"
+            }`}
+            onPress={goToNextQuestion}
+            disabled={!currentQuestion || !AssessmentController.isValidAnswer(currentQuestion, assessment.answers[currentQuestion?.id])}
+            activeOpacity={0.8}
+          >
+            <Text className="text-white text-lg font-semibold">
+              {assessment.currentQuestionIndex === questions.length - 1 ? "Finish" : "Continue"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </KeyboardAvoidingView>
-  );
-};
-
-const styles = StyleSheet.create({
-  keyboardAvoidingContainer: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#F8F9FA',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-  questionContainer: {
-    marginVertical: 20,
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 40,
-  },
-  navButton: {
-    flex: 0.45,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  progress: {
-    textAlign: 'center',
-    marginTop: 24,
-    color: '#666',
-  },
-  button: {
-    marginTop: 24,
-  },
-  text: {
-    fontSize: 16,
-    marginVertical: 12,
-  }
-});
-
-export default AssessmentScreen;
+  )
+}
