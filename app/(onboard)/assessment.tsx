@@ -27,7 +27,7 @@ import { CLIENT_QUESTIONS, COMMON_QUESTIONS, HOST_QUESTIONS } from "@/utils/auth
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export default function AssessmentScreen() {
-  const { authState: { user }, setOnboardingStep } = useAuth()
+  const { authState: { user, isDebugMode }, setOnboardingStep } = useAuth()
   const { data: profile, isLoading: profileLoading } = useProfile()
   const { mutateAsync: updateProfileMutation } = useUpdateProfileMutation()
   const router = useRouter()
@@ -68,7 +68,18 @@ export default function AssessmentScreen() {
       },
     }))
 
-    // Save current answer to Supabase
+    // In debug mode, skip saving to Supabase
+    if (isDebugMode) {
+      console.log("Debug: Answer saved locally:", questionId, answer);
+      return;
+    }
+
+    // Normal mode: Save current answer to Supabase
+    if (!user) {
+      console.log("User not authenticated, skipping save");
+      return;
+    }
+
     try {
       await AssessmentController.saveCurrentAnswer(questionId, answer, user, questions)
     } catch (e: unknown) {
@@ -102,7 +113,17 @@ export default function AssessmentScreen() {
 
   const saveAssessmentData = async () => {
     try {
-      // Update the profile to mark assessment as completed
+      // In debug mode, skip saving to Supabase and just navigate to home
+      if (isDebugMode) {
+        console.log("Debug: Assessment completed, navigating to home");
+        // Mark onboarding as completed
+        await setOnboardingStep(OnboardingStep.COMPLETED);
+        // Navigate to home/dashboard
+        await router.replace('/(app)/home');
+        return;
+      }
+
+      // Normal mode: Update the profile to mark assessment as completed
       await updateProfileMutation({
         assessment_completed: true
       })

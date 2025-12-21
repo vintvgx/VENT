@@ -42,8 +42,9 @@ export default function ProfileScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const {
-    authState: { user },
+    authState: { user, isDebugMode },
     setOnboardingStep,
+    saveDebugData,
   } = useAuth();
   const queryClient = useQueryClient();
 
@@ -70,11 +71,26 @@ export default function ProfileScreen() {
   }, []);
 
   const handleContinue = async (): Promise<void> => {
-    if (!isFormValid || !user) return;
+    if (!isFormValid) return;
 
     try {
-      // Upsert profile data to Supabase
-      // fullName will be split into firstName and lastName automatically
+      // In debug mode, save to debug storage instead of Supabase
+      if (isDebugMode) {
+        await saveDebugData({ 
+          fullName: fullName.trim(),
+          dob: dob ? dob.toISOString() : undefined
+        });
+        console.log("Debug: Profile data saved");
+        setOnboardingStep(OnboardingStep.MOBILE);
+        return;
+      }
+
+      // Normal mode: upsert to Supabase
+      if (!user) {
+        showToast(TOAST.ERROR, "User not authenticated!");
+        return;
+      }
+
       const result = await upsertProfile({
         userId: user.id,
         fullName: fullName.trim(),

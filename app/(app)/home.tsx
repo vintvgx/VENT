@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
 import { useAssessment } from "@/hooks/queries/auth/useAssessmentQuery";
 import { ToastService } from "@/services/ToastService";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const { width } = Dimensions.get("window")
 
@@ -69,20 +69,41 @@ const HomeScreen = () => {
   // Uncomment these in your Expo project:
   const queryClient = useQueryClient();
   const {
-    authState: { user },
+    authState: { user, isDebugMode },
     signOutMutation,
+    clearDebugData,
+    getDebugData,
   } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: assessments, isLoading: assessmentsLoading } = useAssessment();
+  const [debugData, setDebugData] = useState<any>(null);
+
+  // Load debug data when component mounts or debug mode changes
+  useEffect(() => {
+    const loadDebugData = async () => {
+      if (isDebugMode) {
+        const data = await getDebugData();
+        setDebugData(data);
+      } else {
+        setDebugData(null);
+      }
+    };
+    loadDebugData();
+  }, [isDebugMode, getDebugData]);
 
 
   // Uncomment in your Expo project:
   const handleSignOut = async () => {
     try {
-      await signOutMutation?.mutateAsync();
+      if (isDebugMode) {
+        await clearDebugData();
+        ToastService.info("Debug data cleared");
+      } else {
+        await signOutMutation?.mutateAsync();
+      }
     } catch (error) {
       console.error("Error signing out:", error);
-      ToastService.error(`Error signing out: ${error}`);
+      ToastService.error(`Error: ${error}`);
     }
   }
 
@@ -289,12 +310,38 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {/* Sign Out Button */}
+        {/* Debug Data Display */}
+        {isDebugMode && debugData && (
+          <View className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl">
+            <Text className="text-sm font-semibold text-yellow-800 mb-2">Debug Data:</Text>
+            {debugData.username && (
+              <Text className="text-xs text-yellow-700 mb-1">Username: {debugData.username}</Text>
+            )}
+            {debugData.fullName && (
+              <Text className="text-xs text-yellow-700 mb-1">Full Name: {debugData.fullName}</Text>
+            )}
+            {debugData.dob && (
+              <Text className="text-xs text-yellow-700 mb-1">DOB: {new Date(debugData.dob).toLocaleDateString()}</Text>
+            )}
+            {debugData.phoneNumber && (
+              <Text className="text-xs text-yellow-700 mb-1">Phone: {debugData.phoneNumber}</Text>
+            )}
+            {debugData.role && (
+              <Text className="text-xs text-yellow-700 mb-1">Role: {debugData.role}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Sign Out / Clear Data Button */}
         <TouchableOpacity
-          className="bg-red-500 rounded-2xl py-4 items-center mb-6"
+          className={`rounded-2xl py-4 items-center mb-6 ${
+            isDebugMode ? "bg-yellow-500" : "bg-red-500"
+          }`}
           onPress={handleSignOut}
         >
-          <Text className="text-white font-semibold text-base">Sign Out</Text>
+          <Text className="text-white font-semibold text-base">
+            {isDebugMode ? "Clear Data" : "Sign Out"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 

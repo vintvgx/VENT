@@ -34,8 +34,9 @@ export default function MobileScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const {
-    authState: { user },
+    authState: { user, isDebugMode },
     setOnboardingStep,
+    saveDebugData,
   } = useAuth();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
@@ -73,12 +74,25 @@ export default function MobileScreen() {
    * Validates phone number, upserts to Supabase, and navigates to the next step.
    */
   const handleContinue = async (): Promise<void> => {
-    if (!isFormValid || !user) return;
+    if (!isFormValid) return;
 
     try {
       const trimmedPhoneNumber = phoneNumber.trim();
 
-      // Upsert mobile number to Supabase
+      // In debug mode, save to debug storage instead of Supabase
+      if (isDebugMode) {
+        await saveDebugData({ phoneNumber: trimmedPhoneNumber });
+        console.log("Debug: Mobile number saved");
+        setOnboardingStep(OnboardingStep.ROLE);
+        return;
+      }
+
+      // Normal mode: upsert to Supabase
+      if (!user) {
+        showToast(TOAST.ERROR, "User not authenticated!");
+        return;
+      }
+
       const result = await upsertProfile({
         userId: user.id,
         username: profile?.username,

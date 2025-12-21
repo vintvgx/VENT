@@ -33,8 +33,9 @@ export default function UsernameScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const {
-    authState: { user },
+    authState: { user, isDebugMode },
     setOnboardingStep,
+    saveDebugData,
   } = useAuth();
   const queryClient = useQueryClient();
 
@@ -62,14 +63,28 @@ export default function UsernameScreen() {
 
   /**
    * Handles continue button press.
-   * Validates username, saves to storage, upserts to Supabase, and navigates to the next step.
+   * Validates username, saves to storage, upserts to Supabase (or debug storage), and navigates to the next step.
    */
   const handleContinue = async (): Promise<void> => {
-    if (!isFormValid || !user) return;
+    if (!isFormValid) return;
 
     try {
       const trimmedUsername = username.trim();
       
+      // In debug mode, save to debug storage instead of Supabase
+      if (isDebugMode) {
+        await saveDebugData({ username: trimmedUsername });
+        console.log("Debug: Username saved:", trimmedUsername);
+        setOnboardingStep(OnboardingStep.PROFILE);
+        return;
+      }
+
+      // Normal mode: upsert to Supabase
+      if (!user) {
+        showToast(TOAST.ERROR, "User not authenticated!");
+        return;
+      }
+
       // Upsert username to Supabase
       const result = await upsertProfile({
         userId: user.id,
@@ -92,7 +107,7 @@ export default function UsernameScreen() {
       setOnboardingStep(OnboardingStep.PROFILE);
     } catch (error) {
       console.error("Error saving username data:", error);
-      showToast(TOAST.ERROR, "Error updating profile data!")
+      showToast(TOAST.ERROR, "Error saving username data!");
     }
   };
 
