@@ -512,8 +512,6 @@ export const upsertProfile = async (params: UpsertProfileParams): Promise<{
       updateData.phone_number = phoneNumber.trim();
     }
 
-    console.log("Updating user profile data:", prettyJSON(updateData));
-
     // Perform the upsert and select the updated data
     const { data, error } = await supabase
       .from("profiles")

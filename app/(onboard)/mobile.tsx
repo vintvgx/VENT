@@ -101,8 +101,6 @@ export default function MobileScreen() {
     } catch (error) {
       console.error("Error saving mobile number data:", error);
       showToast(TOAST.ERROR, "Error saving mobile number!");
-      // Still proceed with navigation even if save fails
-      setOnboardingStep(OnboardingStep.ROLE);
     }
   };
 
