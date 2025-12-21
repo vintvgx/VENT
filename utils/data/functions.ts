@@ -17,6 +17,7 @@ export const ONBOARDING_STORAGE_KEYS = {
   FULL_NAME: "onboarding_fullName",
   DOB: "onboarding_dob",
   USERNAME: "onboarding_username",
+  MOBILE: "onboarding_mobile",
 } as const;
 
 /**

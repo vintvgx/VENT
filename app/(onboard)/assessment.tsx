@@ -29,7 +29,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 export default function AssessmentScreen() {
   const { authState: { user }, setOnboardingStep } = useAuth()
   const { data: profile, isLoading: profileLoading } = useProfile()
-  const { mutate: updateProfileMutation } = useUpdateProfileMutation()
+  const { mutateAsync: updateProfileMutation } = useUpdateProfileMutation()
   const router = useRouter()
 
   const [assessment, setAssessment] = useState<AssessmentState>({
@@ -103,18 +103,18 @@ export default function AssessmentScreen() {
   const saveAssessmentData = async () => {
     try {
       // Update the profile to mark assessment as completed
-      updateProfileMutation({
+      await updateProfileMutation({
         assessment_completed: true
       })
       
       // Mark onboarding as completed
       await setOnboardingStep(OnboardingStep.COMPLETED)
 
+      // Navigate to home/dashboard
+      await router.replace('/(app)/home')
+
       // Delete onboardingStep ref in storage
       await AsyncStorage.removeItem("onboardingStep")
-      
-      // Navigate to home/dashboard
-      router.replace('/(app)/home')
     } catch (error) {
       console.error("Error saving assessment data:", error)
     }

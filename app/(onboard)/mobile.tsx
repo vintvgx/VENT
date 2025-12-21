@@ -1,7 +1,7 @@
 /**
- * Username Screen for VENT App
+ * Mobile Screen for VENT App
  *
- * Allows users to set their username during onboarding.
+ * Allows users to enter their mobile number during onboarding.
  */
 import { useState, useEffect } from "react";
 import {
@@ -24,11 +24,12 @@ import {
 } from "@/utils/data/functions";
 import { upsertProfile } from "@/utils/auth/function";
 import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/toast";
+import { useProfile } from "@/hooks/queries/auth/useProfileQuery";
+import { isPossiblePhoneNumber } from "libphonenumber-js";
 import { TOAST, useShowToast } from "@/components/ui/toast/useToast";
 
-export default function UsernameScreen() {
-  const [username, setUsername] = useState("");
+export default function MobileScreen() {
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -37,13 +38,20 @@ export default function UsernameScreen() {
     setOnboardingStep,
   } = useAuth();
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const showToast = useShowToast();
 
-  const showToast = useShowToast()
-
-  // Validate username (must be non-empty after trimming)
+  // Validate phone number (must be a valid phone number format)
   useEffect(() => {
-    setIsFormValid(username.trim().length > 0);
-  }, [username]);
+    const trimmedPhone = phoneNumber.trim();
+    if (trimmedPhone.length > 0) {
+      // Use libphonenumber-js to validate phone number
+      const isValid = isPossiblePhoneNumber(trimmedPhone);
+      setIsFormValid(isValid);
+    } else {
+      setIsFormValid(false);
+    }
+  }, [phoneNumber]);
 
   // Monitor keyboard visibility for footer spacing
   useEffect(() => {
@@ -62,25 +70,25 @@ export default function UsernameScreen() {
 
   /**
    * Handles continue button press.
-   * Validates username, saves to storage, upserts to Supabase, and navigates to the next step.
+   * Validates phone number, upserts to Supabase, and navigates to the next step.
    */
   const handleContinue = async (): Promise<void> => {
     if (!isFormValid || !user) return;
 
     try {
-      const trimmedUsername = username.trim();
-      
-      // Upsert username to Supabase
+      const trimmedPhoneNumber = phoneNumber.trim();
+
+      // Upsert mobile number to Supabase
       const result = await upsertProfile({
         userId: user.id,
-        username: trimmedUsername,
-        email: user.email
+        username: profile?.username,
+        phoneNumber: trimmedPhoneNumber,
       });
 
       if (!result.success) {
-        console.error("Error upserting username to profile:", result.error);
-        showToast(TOAST.ERROR, "Error updating profile data!")
-        return
+        console.error("Error upserting mobile number to profile:", result.error);
+        showToast(TOAST.ERROR, "Error updating mobile number!");
+        return;
       } else if (result.data) {
         // Update the profile in the query cache so it's immediately available
         queryClient.setQueryData(["profile", user.id], result.data);
@@ -88,11 +96,13 @@ export default function UsernameScreen() {
         queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       }
 
-      console.log("Username set:", trimmedUsername);
-      setOnboardingStep(OnboardingStep.PROFILE);
+      // Navigate to next step
+      setOnboardingStep(OnboardingStep.ROLE);
     } catch (error) {
-      console.error("Error saving username data:", error);
-      showToast(TOAST.ERROR, "Error updating profile data!")
+      console.error("Error saving mobile number data:", error);
+      showToast(TOAST.ERROR, "Error saving mobile number!");
+      // Still proceed with navigation even if save fails
+      setOnboardingStep(OnboardingStep.ROLE);
     }
   };
 
@@ -105,37 +115,43 @@ export default function UsernameScreen() {
           {/* Question Section */}
           <View className="mb-9">
             <Text className="text-3xl font-bold text-gray-800 mb-2 leading-10">
-              Choose your{" "}
-              <Text className="text-indigo-500 underline">username</Text>
+              Enter your{" "}
+              <Text className="text-indigo-500 underline">mobile number</Text>
             </Text>
             <Text className="text-base text-gray-500 leading-6">
-              Pick a unique username that represents you
+              We'll use this to verify your account and keep it secure
             </Text>
           </View>
 
-          {/* Username Input */}
+          {/* Phone Number Input */}
           <View className="mb-6">
             <Text className="text-sm font-semibold text-gray-700 mb-2.5">
-              Username
+              Mobile Number
             </Text>
             <View className="flex-row items-center bg-white rounded-2xl border border-gray-200 px-4 h-14">
               <Ionicons
-                name="at-outline"
+                name="call-outline"
                 size={20}
                 color="#9CA3AF"
                 style={{ marginRight: 12 }}
               />
               <TextInput
                 className="flex-1 text-base text-gray-800"
-                placeholder="Enter your username"
+                placeholder="+1 (555) 123-4567"
                 placeholderTextColor="#9CA3AF"
-                value={username}
-                onChangeText={setUsername}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
                 autoCapitalize="none"
                 autoCorrect={false}
-                autoComplete="username"
+                autoComplete="tel"
               />
             </View>
+            {phoneNumber.trim().length > 0 && !isFormValid && (
+              <Text className="text-sm text-red-500 mt-2">
+                Please enter a valid phone number
+              </Text>
+            )}
           </View>
         </View>
 
@@ -156,3 +172,4 @@ export default function UsernameScreen() {
     </SafeAreaView>
   );
 }
+

@@ -15,21 +15,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { FeatureCard } from "@/components/auth/FeatureCard";
+import { FeatureCard, FeatureCardProps } from "@/components/auth/FeatureCard";
 import { useRef, useState } from "react";
 import { useShowToast } from "@/components/ui/toast/useToast";
 import { signInWithApple, signInWithGoogle } from "@/utils/auth/function";
 
 const { width, height } = Dimensions.get("window");
 const CARD_SIZE = (width - 60) / 2;
-
-interface FeatureCardProps {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  backgroundColor: string;
-  iconColor: string;
-  subtitle?: string;
-}
 
 export default function WelcomeScreen() {
   const router = useRouter();

@@ -440,6 +440,7 @@ export interface UpsertProfileParams {
   email?: string;
   dob?: Date | null;
   role?: UserType;
+  phoneNumber?: string; // Phone number in E.164 format
 }
 
 /**
@@ -455,7 +456,7 @@ export const upsertProfile = async (params: UpsertProfileParams): Promise<{
   error?: any 
 }> => {
   try {
-    const { userId, username, fullName, firstName, lastName, email, dob, role } = params;
+    const { userId, username, fullName, firstName, lastName, email, dob, role, phoneNumber } = params;
 
     // Build the update object with only provided fields
     const updateData: Record<string, any> = {
@@ -504,6 +505,11 @@ export const upsertProfile = async (params: UpsertProfileParams): Promise<{
 
     if (email !== undefined) {
       updateData.email = email;
+    }
+
+    // Handle phone number
+    if (phoneNumber !== undefined) {
+      updateData.phone_number = phoneNumber.trim();
     }
 
     console.log("Updating user profile data:", prettyJSON(updateData));
